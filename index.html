@@ -103,6 +103,157 @@
             box-shadow: 0 8px 30px rgba(251,191,36,.3); border: 1px solid #fef3c7; letter-spacing: .08em;
         }
         .lotus-btn:active { transform: scale(.96); }
+
+        /* ================= 법서 (불경) ================= */
+        .sc-overlay {
+            position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center;
+            padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+            background: radial-gradient(ellipse at 50% 45%, rgba(70,40,15,.88), rgba(4,2,1,.96));
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            opacity: 0; pointer-events: none; transition: opacity .6s ease; touch-action: auto;
+        }
+        .sc-overlay.show { opacity: 1; pointer-events: auto; }
+        .sc-burst {
+            position: absolute; left: 50%; top: 50%; width: 120vmax; height: 120vmax; margin: -60vmax 0 0 -60vmax; border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,220,130,.55) 0%, rgba(255,190,80,.22) 18%, rgba(255,190,80,0) 45%);
+            opacity: 0; transform: scale(.1); pointer-events: none;
+        }
+        .sc-burst.go { animation: scBurst 2.2s ease-out forwards; }
+        @keyframes scBurst { 0% { opacity: 0; transform: scale(.1); } 25% { opacity: 1; } 100% { opacity: .0; transform: scale(1); } }
+
+        .sc-petals { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+        .sc-petal {
+            position: absolute; top: -8%; width: 14px; height: 22px; border-radius: 60% 0 60% 0;
+            background: linear-gradient(135deg, #fbcfe8, #f472b6); opacity: .0;
+            animation: scFall linear infinite;
+        }
+        @keyframes scFall {
+            0% { transform: translate3d(0,-10vh,0) rotate(0deg); opacity: 0; }
+            10% { opacity: .85; }
+            100% { transform: translate3d(var(--dx), 112vh, 0) rotate(540deg); opacity: .0; }
+        }
+
+        .sc-stage { position: relative; perspective: 1800px; width: min(94vw, 780px); height: min(90dvh, 840px); }
+        .sc-book {
+            position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+            transform: translateY(60px) scale(.82) rotateX(18deg); opacity: 0;
+            transition: transform 1.1s cubic-bezier(.2,.8,.2,1), opacity .8s ease;
+        }
+        .sc-overlay.show .sc-book { transform: none; opacity: 1; }
+
+        .sc-paper {
+            position: absolute; inset: 0; display: flex; flex-direction: column; overflow: hidden;
+            border-radius: 6px 16px 16px 6px; color: #2a1d14;
+            background:
+                radial-gradient(circle at 20% 10%, rgba(255,255,255,.55), transparent 55%),
+                linear-gradient(180deg, #f8f0dc, #efe3c6);
+            box-shadow: 0 30px 80px rgba(0,0,0,.75), 0 0 0 1px rgba(90,50,20,.5), inset 0 0 60px rgba(150,100,40,.18);
+            border-left: 18px solid #6b1a10;
+        }
+        .sc-paper::before { /* 오침안정법 실 매듭 */
+            content: ''; position: absolute; left: -14px; top: 18px; bottom: 18px; width: 4px; z-index: 3;
+            background: repeating-linear-gradient(180deg, #e8c56a 0 10px, transparent 10px 36px); border-radius: 2px; opacity: .9;
+        }
+        .sc-ribbon {
+            position: absolute; top: -4px; right: 38px; width: 18px; height: 62px; z-index: 4;
+            background: linear-gradient(180deg, #9b1c1c, #7a1212); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+            box-shadow: 0 4px 6px rgba(0,0,0,.4);
+        }
+
+        .sc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 14px 16px 8px 18px; border-bottom: 2px solid rgba(138,28,20,.25); }
+        .sc-title-sub { display: block; font-size: 11px; letter-spacing: .35em; color: #8a6a1e; font-weight: 700; }
+        .sc-title h2 { font-size: clamp(19px, 4.6vw, 26px); font-weight: 800; color: #5c1209; letter-spacing: .06em; margin: 2px 0 0; font-family: 'Noto Serif KR', serif; }
+        .sc-tools { display: flex; gap: 6px; align-items: center; padding-right: 54px; }
+        .sc-tool {
+            min-width: 38px; height: 38px; padding: 0 8px; border-radius: 10px; font-weight: 800; font-size: 15px; color: #5c1209;
+            background: rgba(138,28,20,.08); border: 1px solid rgba(138,28,20,.3); display: inline-flex; align-items: center; justify-content: center; gap: 1px;
+        }
+        .sc-tool:active { background: rgba(138,28,20,.2); transform: scale(.95); }
+        .sc-tool small { font-size: 11px; }
+        .sc-close { position: absolute; top: 12px; right: 12px; background: #3d1e10; color: #fde68a; border-color: #3d1e10; width: 38px; z-index: 5; }
+
+        .sc-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 10px 14px 8px 18px; scrollbar-width: none; touch-action: pan-x; }
+        .sc-tabs::-webkit-scrollbar { display: none; }
+        .sc-tab {
+            flex: 0 0 auto; padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 700; color: #5c3a22; white-space: nowrap;
+            background: rgba(255,255,255,.55); border: 1px solid rgba(120,80,40,.3); font-family: 'Noto Serif KR', serif;
+        }
+        .sc-tab .hj { display: block; font-size: 10px; letter-spacing: .2em; font-weight: 500; opacity: .75; }
+        .sc-tab.active { background: linear-gradient(180deg, #8f2418, #6b1a10); color: #fde68a; border-color: #4d1008; box-shadow: 0 3px 10px rgba(107,26,16,.45); }
+
+        .sc-page { flex: 1; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 4px 22px 28px 20px; transform-origin: left center; scroll-behavior: smooth; }
+        .sc-page::-webkit-scrollbar { width: 6px; } .sc-page::-webkit-scrollbar-thumb { background: rgba(138,28,20,.35); border-radius: 3px; }
+        .sc-page.turn-out { animation: scTurnOut .3s ease-in forwards; }
+        .sc-page.turn-in { animation: scTurnIn .45s ease-out; }
+        @keyframes scTurnOut { to { transform: perspective(1400px) rotateY(-62deg); opacity: 0; } }
+        @keyframes scTurnIn { from { transform: perspective(1400px) rotateY(48deg); opacity: 0; } to { transform: perspective(1400px) rotateY(0); opacity: 1; } }
+
+        .sc-content { --sc-fs: 17px; font-family: 'Noto Serif KR', 'Gowun Batang', serif; font-size: var(--sc-fs); line-height: 1.95; color: #2a1d14; word-break: keep-all; }
+        .sc-content p { margin: .55em 0; }
+        .sc-content .hj { font-family: 'Noto Serif KR', serif; color: #8a6a1e; letter-spacing: .12em; font-weight: 600; }
+        .sc-lead { padding: 12px 16px; margin: 12px 0 6px; background: rgba(184,134,11,.12); border-left: 4px solid #b8860b; border-radius: 0 10px 10px 0; font-size: .95em; }
+        .sc-sec { margin: 22px 0 8px; }
+        .sc-sec > h3 { font-size: 1.22em; font-weight: 800; color: #6b1a10; padding-bottom: 6px; margin-bottom: 8px; border-bottom: 2px solid transparent; border-image: linear-gradient(90deg, #b8860b, transparent) 1; line-height: 1.5; }
+        .sc-sec > h3 .hj { font-size: .75em; margin-left: 4px; }
+        .sc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-top: 8px; }
+        .sc-chip { padding: 10px 14px; background: rgba(255,255,255,.62); border: 1px solid rgba(138,100,40,.28); border-radius: 12px; box-shadow: 0 1px 0 rgba(255,255,255,.7) inset; line-height: 1.65; }
+        .sc-chip b { display: block; color: #5c1209; font-size: 1.02em; }
+        .sc-chip b .hj { font-size: .8em; }
+        .sc-chip span.d { font-size: .92em; color: #3a2a20; }
+        .sc-q { margin: 14px 0; padding: 14px 16px 10px; background: linear-gradient(180deg, rgba(255,255,255,.7), rgba(255,250,235,.5)); border: 1px solid rgba(138,100,40,.3); border-left: 5px solid #8f2418; border-radius: 4px 14px 14px 4px; }
+        .sc-q .hj { font-size: 1.15em; display: block; line-height: 1.7; }
+        .sc-q .ko { font-size: 1.04em; font-weight: 700; color: #2a1d14; margin-top: 4px; }
+        .sc-q .note { font-size: .88em; color: #5a463a; margin: 6px 0 0; }
+        .sc-q footer { text-align: right; font-size: .82em; font-weight: 700; color: #8f2418; margin-top: 4px; }
+
+        .sutra-head { text-align: center; margin: 10px 0 4px; }
+        .sutra-head .hj { font-size: 1.05em; display: block; }
+        .sutra-head .big { font-size: 1.5em; font-weight: 800; color: #5c1209; letter-spacing: .06em; }
+        .sutra-line { margin: 10px 0; padding: 10px 14px 12px; border-left: 4px solid transparent; border-radius: 0 12px 12px 0; transition: background .4s, border-color .4s, box-shadow .4s; }
+        .sutra-line .hj { display: block; font-size: .85em; }
+        .sutra-line .ko { font-size: 1.12em; font-weight: 800; color: #1f140d; line-height: 1.8; }
+        .sutra-line .mean { font-size: .88em; color: #5a463a; margin-top: 3px; padding-left: 10px; border-left: 2px solid rgba(138,100,40,.35); }
+        .sutra-line.reading { background: linear-gradient(90deg, rgba(232,185,35,.42), rgba(232,185,35,.05)); border-left-color: #b8860b; box-shadow: 0 4px 18px rgba(184,134,11,.28); }
+        .sc-act {
+            display: inline-flex; align-items: center; gap: 8px; margin: 8px 0; padding: 12px 20px; border-radius: 999px; font-weight: 800; font-size: .95em;
+            background: linear-gradient(180deg, #a02a1c, #6b1a10); color: #fde68a; border: 1px solid #4d1008; box-shadow: 0 5px 16px rgba(107,26,16,.4);
+            font-family: 'Noto Serif KR', serif;
+        }
+        .sc-act:active { transform: scale(.96); }
+        .sc-act.alt { background: linear-gradient(180deg, #f5d97a, #d9a82b); color: #3b1d0a; border-color: #b8860b; }
+        .sc-search { width: 100%; padding: 11px 14px 11px 40px; margin: 6px 0 4px; border-radius: 12px; border: 1.5px solid rgba(138,100,40,.45); background: rgba(255,255,255,.75) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%238a6a1e' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='6'/%3E%3Cpath d='m13 13 4 4'/%3E%3C/svg%3E") no-repeat 13px center; font-size: .95em; color: #2a1d14; font-family: inherit; user-select: text; -webkit-user-select: text; outline: none; }
+        .sc-search:focus { border-color: #8f2418; box-shadow: 0 0 0 3px rgba(143,36,24,.15); }
+        .sc-term { padding: 10px 2px; border-bottom: 1px dashed rgba(138,100,40,.4); line-height: 1.7; }
+        .sc-term b { color: #6b1a10; font-size: 1.04em; } .sc-term .hj { font-size: .82em; margin-left: 4px; }
+        .sc-term p { margin: 2px 0 0; font-size: .93em; color: #3a2a20; }
+        .sc-empty { text-align: center; color: #8a6a5a; padding: 24px 0; }
+
+        .sc-foot { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px 12px 18px; border-top: 2px solid rgba(138,28,20,.2); background: rgba(255,255,255,.35); }
+        .sc-nav { padding: 9px 14px; border-radius: 10px; font-weight: 700; font-size: 13px; color: #5c1209; background: rgba(138,28,20,.08); border: 1px solid rgba(138,28,20,.3); font-family: 'Noto Serif KR', serif; }
+        .sc-nav:active { transform: scale(.95); } .sc-nav[disabled] { opacity: .35; }
+        .sc-pageno { font-size: 13px; color: #8a6a1e; font-weight: 700; letter-spacing: .15em; }
+
+        /* 표지 */
+        .sc-cover {
+            position: absolute; inset: -5px -6px -5px -10px; z-index: 10; transform-origin: left center; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+            border-radius: 6px 16px 16px 6px;
+            background: radial-gradient(circle at 30% 20%, #34457a, #1b2548 60%, #11182f);
+            box-shadow: 0 30px 80px rgba(0,0,0,.8), inset 0 0 0 3px #e8b923, inset 0 0 0 7px #1b2548, inset 0 0 0 9px rgba(232,185,35,.6);
+            transition: transform 1.5s cubic-bezier(.55,.05,.2,1), opacity .5s ease 1.1s; display: flex; align-items: center; justify-content: center;
+        }
+        .sc-cover.opened { transform: rotateY(-168deg); opacity: 0; pointer-events: none; }
+        .sc-cover-frame { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 0 12px; }
+        .sc-cover-lotus { font-size: 44px; color: #e8b923; text-shadow: 0 0 24px rgba(232,185,35,.7); }
+        .sc-cover-title { writing-mode: vertical-rl; font-family: 'Noto Serif KR', serif; font-size: clamp(34px, 9vw, 54px); font-weight: 800; letter-spacing: .3em; color: #f6d77a; text-shadow: 0 0 20px rgba(232,185,35,.55), 0 2px 0 #7a5a10; padding: 14px 0 34px; line-height: 1.2; }
+        .sc-cover-sub { color: #e8c56a; font-size: 13px; letter-spacing: .25em; opacity: .85; }
+        .sc-cover-seal { margin-top: 10px; padding: 6px 10px; border: 2px solid #b3261e; color: #e0453a; font-weight: 800; letter-spacing: .1em; border-radius: 4px; transform: rotate(-6deg); font-family: 'Noto Serif KR', serif; }
+
+        @media (max-width: 560px) {
+            .sc-page { padding: 2px 16px 24px 14px; }
+            .sc-tools { padding-right: 46px; }
+            .sc-paper { border-left-width: 12px; } .sc-paper::before { left: -9px; }
+            .sc-tool { min-width: 34px; height: 34px; }
+        }
     </style>
 </head>
 <body class="w-screen h-screen relative flex flex-col justify-between items-center overflow-hidden">
@@ -207,50 +358,41 @@
         </div>
     </div>
 
-    <!-- 불경 모달 -->
-    <div id="scriptureModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300" style="touch-action:auto">
-        <div class="relative w-full max-w-3xl max-h-[90vh] hanji-bg wood-border rounded-2xl p-5 md:p-10 flex flex-col justify-between shadow-2xl text-stone-900 transform scale-95 transition-transform duration-300">
-            <button id="closeScripture" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-stone-800 text-amber-100 flex items-center justify-center hover:bg-amber-900 transition shadow"><i class="fa-solid fa-xmark"></i></button>
-            <div class="text-center border-b-2 border-amber-900/20 pb-4 mb-4">
-                <span class="text-xs tracking-widest text-amber-900 uppercase font-semibold">대승불교의 지혜</span>
-                <h2 class="text-2xl md:text-3xl font-extrabold text-amber-950 mt-1 tracking-wide">마음 수행 불경 (法書)</h2>
-            </div>
-            <div class="flex border-b border-amber-900/20 mb-4 overflow-x-auto gap-2 text-sm whitespace-nowrap">
-                <button class="scripture-tab px-4 py-2 font-bold border-b-2 border-amber-900 text-amber-950" data-tab="tab-hanya">반야심경(般若心經)</button>
-                <button class="scripture-tab px-4 py-2 text-stone-600 border-b-2 border-transparent hover:text-amber-900" data-tab="tab-terms">핵심 불교 사상</button>
-                <button class="scripture-tab px-4 py-2 text-stone-600 border-b-2 border-transparent hover:text-amber-900" data-tab="tab-quotes">선사들의 게송</button>
-            </div>
-            <div class="overflow-y-auto max-h-[55vh] pr-2 leading-relaxed text-stone-800 text-sm md:text-base space-y-4" style="touch-action:pan-y">
-                <div id="tab-hanya" class="scripture-content space-y-4">
-                    <div class="bg-amber-900/5 p-4 rounded-xl border border-amber-900/10">
-                        <h3 class="font-bold text-amber-900 text-lg mb-2">마하반야바라밀다심경 (摩訶般若波羅蜜多心經)</h3>
-                        <p class="italic text-stone-700 text-xs md:text-sm mb-3">"지혜의 완성으로 다다르는 가장 으뜸가는 마음의 경전"</p>
-                        <p class="mb-3 leading-relaxed">
-                            <strong>관자재보살 행심반야바라밀다시 조견오온개공 도일체고액...</strong><br>
-                            관자재보살이 깊은 반야바라밀다를 행할 때, 오온이 모두 비어 있음을 비추어 보고 모든 괴로움과 재앙을 건넜느니라.
-                        </p>
-                        <div class="p-3 bg-white/70 rounded-lg text-stone-900 font-semibold my-2 border-l-4 border-amber-700">
-                            "색불이공 공불이색 색즉시공 공즉시색 (色不異空 空不異色 色即是空 空即是色)"
+    <!-- 불경 모달 (법서) -->
+    <div id="scriptureModal" class="sc-overlay" aria-hidden="true">
+        <div class="sc-burst" id="scBurst"></div>
+        <div class="sc-petals" id="scPetals"></div>
+        <div class="sc-stage">
+            <div class="sc-book" id="scBook">
+                <div class="sc-paper">
+                    <div class="sc-ribbon"></div>
+                    <header class="sc-head">
+                        <div class="sc-title">
+                            <span class="sc-title-sub">寂默堂 法書</span>
+                            <h2>마음 수행 불경</h2>
                         </div>
-                        <p class="text-xs text-stone-600 mt-2">물질적인 형태가 본래 비어 있음과 다르지 않고, 비어 있음이 물질적인 형태와 다르지 아니하며, 물질이 곧 비어 있음이요 비어 있음이 곧 물질이니라.</p>
+                        <div class="sc-tools">
+                            <button id="scFontDown" class="sc-tool" aria-label="글자 작게">가<small>−</small></button>
+                            <button id="scFontUp" class="sc-tool" aria-label="글자 크게">가<small>+</small></button>
+                            <button id="closeScripture" class="sc-tool sc-close" aria-label="닫기"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </header>
+                    <nav class="sc-tabs" id="scTabs"></nav>
+                    <div class="sc-page" id="scPage"><div class="sc-content" id="scContent"></div></div>
+                    <footer class="sc-foot">
+                        <button id="scPrev" class="sc-nav"><i class="fa-solid fa-chevron-left"></i> 이전 장</button>
+                        <span id="scPageNo" class="sc-pageno">1 / 5</span>
+                        <button id="scNext" class="sc-nav">다음 장 <i class="fa-solid fa-chevron-right"></i></button>
+                    </footer>
+                </div>
+                <div class="sc-cover" id="scCover">
+                    <div class="sc-cover-frame">
+                        <div class="sc-cover-lotus">☸</div>
+                        <div class="sc-cover-title">般若心經</div>
+                        <div class="sc-cover-sub">마하반야바라밀다심경</div>
+                        <div class="sc-cover-seal">法書</div>
                     </div>
                 </div>
-                <div id="tab-terms" class="scripture-content hidden space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10"><h4 class="font-bold text-amber-900 text-base mb-1">제행무상 (諸行無常)</h4><p class="text-xs md:text-sm text-stone-700">세상의 모든 존재와 현상은 잠시도 고정되어 있지 않고 끊임없이 흘러갑니다.</p></div>
-                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10"><h4 class="font-bold text-amber-900 text-base mb-1">연기법 (緣起法)</h4><p class="text-xs md:text-sm text-stone-700">이것이 있으므로 저것이 있고, 이것이 생김으로 저것이 생겨납니다.</p></div>
-                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10"><h4 class="font-bold text-amber-900 text-base mb-1">자비 (慈悲)</h4><p class="text-xs md:text-sm text-stone-700">모든 생명에게 기쁨을 주고(慈), 괴로움을 거두어주는(悲) 맑은 마음입니다.</p></div>
-                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10"><h4 class="font-bold text-amber-900 text-base mb-1">해탈 (解脫)</h4><p class="text-xs md:text-sm text-stone-700">모든 번뇌와 집착의 굴레에서 벗어나 완전한 마음의 평온을 얻음입니다.</p></div>
-                    </div>
-                </div>
-                <div id="tab-quotes" class="scripture-content hidden space-y-3">
-                    <blockquote class="p-4 bg-amber-900/5 rounded-xl border-l-4 border-amber-800 text-stone-800 italic">"마음이 일어나면 갖가지 법이 생겨나고, 마음이 사라지면 갖가지 법도 사라진다."<footer class="text-right not-italic text-xs text-amber-900 mt-1.5 font-bold">- 원효대사 (元曉大師)</footer></blockquote>
-                    <blockquote class="p-4 bg-amber-900/5 rounded-xl border-l-4 border-amber-800 text-stone-800 italic">"산은 산이요, 물은 물이로다."<footer class="text-right not-italic text-xs text-amber-900 mt-1.5 font-bold">- 성철스님</footer></blockquote>
-                </div>
-            </div>
-            <div class="mt-4 pt-3 border-t border-amber-900/20 text-center text-xs text-stone-600 flex justify-between items-center gap-2">
-                <span>두 손을 모아 합장하고 평온한 호흡을 하세요.</span>
-                <span class="font-bold text-amber-900 whitespace-nowrap">성불(成佛)하십시오 🙏</span>
             </div>
         </div>
     </div>
@@ -1184,18 +1326,278 @@ function toast(html) {
 }
 
 /* ---------------- UI 이벤트 ---------------- */
+/* ---------------- 법서 (불경) ---------------- */
+const SUTRA = [
+    ['觀自在菩薩 行深般若波羅蜜多時 照見五蘊皆空 度一切苦厄', '관자재보살 행심반야바라밀다시 조견오온개공 도일체고액',
+     '관세음보살이 깊은 지혜의 수행을 하실 때, 몸과 마음을 이루는 다섯 가지(오온)가 모두 비어 있음을 비추어 보고 모든 괴로움에서 건너셨다.'],
+    ['舍利子 色不異空 空不異色 色卽是空 空卽是色 受想行識 亦復如是', '사리자 색불이공 공불이색 색즉시공 공즉시색 수상행식 역부여시',
+     '사리자여, 형상은 공과 다르지 않고 공은 형상과 다르지 않다. 형상이 곧 공이요 공이 곧 형상이며, 느낌·생각·의지·의식 또한 그러하다.'],
+    ['舍利子 是諸法空相 不生不滅 不垢不淨 不增不減', '사리자 시제법공상 불생불멸 불구부정 부증불감',
+     '모든 존재의 참모습은 나지도 사라지지도 않고, 더럽지도 깨끗하지도 않으며, 늘지도 줄지도 않는다.'],
+    ['是故 空中無色 無受想行識 無眼耳鼻舌身意 無色聲香味觸法 無眼界 乃至無意識界', '시고 공중무색 무수상행식 무안이비설신의 무색성향미촉법 무안계 내지 무의식계',
+     '그러므로 공의 자리에는 고정된 형상도, 느낌·생각·의지·의식도, 눈·귀·코·혀·몸·뜻도, 그 대상들도, 그것을 인식하는 세계도 따로 없다.'],
+    ['無無明 亦無無明盡 乃至無老死 亦無老死盡 無苦集滅道 無智亦無得', '무무명 역무무명진 내지 무노사 역무노사진 무고집멸도 무지역무득',
+     '무명도 무명이 다함도, 늙고 죽음도 그것이 다함도 없고, 사성제도 지혜도 얻음도 붙들 만한 실체가 없다.'],
+    ['以無所得故 菩提薩埵 依般若波羅蜜多故 心無罣礙 無罣礙故 無有恐怖 遠離顚倒夢想 究竟涅槃', '이무소득고 보리살타 의반야바라밀다고 심무가애 무가애고 무유공포 원리전도몽상 구경열반',
+     '얻을 것이 없기에 보살은 지혜의 완성에 의지해 마음에 걸림이 없고, 걸림이 없으니 두려움이 없으며, 뒤바뀐 헛된 생각을 멀리 떠나 마침내 열반에 든다.'],
+    ['三世諸佛 依般若波羅蜜多故 得阿耨多羅三藐三菩提', '삼세제불 의반야바라밀다고 득아뇩다라삼먁삼보리',
+     '과거·현재·미래의 모든 부처님도 이 지혜에 의지해 더없이 바르고 완전한 깨달음을 얻으셨다.'],
+    ['故知般若波羅蜜多 是大神呪 是大明呪 是無上呪 是無等等呪 能除一切苦 眞實不虛', '고지반야바라밀다 시대신주 시대명주 시무상주 시무등등주 능제일체고 진실불허',
+     '그러므로 알아라. 반야바라밀다는 크게 신비한 주문, 크게 밝은 주문, 위없는 주문, 견줄 데 없는 주문이니 모든 괴로움을 없애며 진실하여 헛되지 않다.'],
+    ['故說般若波羅蜜多呪 卽說呪曰', '고설반야바라밀다주 즉설주왈', '이제 반야바라밀다의 주문을 설하니, 곧 주문을 말하여 이르기를'],
+    ['揭諦揭諦 波羅揭諦 波羅僧揭諦 菩提娑婆訶', '아제아제 바라아제 바라승아제 모지사바하',
+     '가세 가세, 저 언덕으로 가세. 모두 함께 저 언덕으로 가세. 깨달음이여, 이루어지이다.']
+];
+
+const GLOSS = [
+    ['합장', '合掌', '두 손바닥을 마주 모아 가슴 앞에 세우는 인사. 마음을 하나로 모아 상대와 부처님께 공경을 표합니다.'],
+    ['반배', '半拜', '합장한 채 허리를 숙여 하는 약식 절. 법당에 들고 날 때, 스님을 뵐 때 합니다.'],
+    ['삼배', '三拜', '불·법·승 삼보(三寶)에 귀의하는 마음으로 올리는 세 번의 큰절.'],
+    ['오체투지', '五體投地', '이마·두 팔꿈치·두 무릎, 다섯 부위를 땅에 대는 가장 깊은 절. 스스로를 낮추는 수행입니다.'],
+    ['하심', '下心', '자신을 낮추는 마음. 절 수행의 근본 뜻입니다.'],
+    ['백팔번뇌', '百八煩惱', '사람이 겪는 번뇌를 108가지로 헤아린 것. 108배와 108염주가 여기서 나왔습니다.'],
+    ['염주', '念珠', '염불이나 절을 할 때 횟수를 헤아리며 마음을 모으는 구슬 꿰미.'],
+    ['목탁', '木鐸', '나무를 깎아 속을 비운 법구. 두드려 염불의 박자를 맞추고 마음을 일깨웁니다.'],
+    ['경쇠', '磬', '작은 놋쇠 그릇을 채로 쳐서 맑은 소리를 내는 법구. 예불과 독경 중 쉼과 시작을 알립니다.'],
+    ['법당', '法堂', '부처님께 예불하고 가르침을 듣는 사찰의 중심 건물.'],
+    ['대웅전', '大雄殿', '석가모니불을 모신 법당. 대웅(大雄)은 세상을 이끄는 큰 영웅, 곧 부처님을 높여 부르는 말입니다.'],
+    ['불단', '佛壇', '불상을 모시고 공양물을 올리는 단.'],
+    ['후불탱화', '後佛幀畫', '불상 뒤에 거는 불화. 부처님의 세계와 가르침을 그림으로 나타냅니다.'],
+    ['광배', '光背', '부처님의 몸과 머리에서 나는 빛을 형상화해 불상 뒤에 두는 장식.'],
+    ['연화대좌', '蓮華臺座', '연꽃 모양의 불상 받침. 진흙 속에서도 물들지 않는 연꽃은 깨달음의 상징입니다.'],
+    ['항마촉지인', '降魔觸地印', '오른손을 무릎 아래로 늘어뜨려 땅을 가리키는 손 모양. 마왕의 유혹을 물리치고 깨달음을 이룬 순간을 나타냅니다.'],
+    ['선정인', '禪定印', '두 손을 겹쳐 무릎 위에 포개어 두는 명상의 손 모양.'],
+    ['연등', '燃燈', '등불을 밝혀 부처님께 올리는 공양. 어둠을 밝히는 지혜를 상징합니다.'],
+    ['예불', '禮佛', '부처님께 예를 올리는 의식. 사찰에서는 새벽과 저녁에 올립니다.'],
+    ['공양', '供養', '부처님께 향·꽃·등·음식을 올리는 일, 또는 스님의 식사.'],
+    ['발우공양', '鉢盂供養', '발우(그릇)에 음식을 받아 남김없이 먹는 사찰의 식사 예법.'],
+    ['안거', '安居', '정해진 기간 동안 한곳에 머물며 집중해서 수행하는 일. 하안거·동안거가 있습니다.'],
+    ['참선', '參禪', '앉아서 마음의 본바탕을 살피는 수행.'],
+    ['화두', '話頭', '참선 때 의심을 일으켜 붙들고 가는 질문. “이 뭣고?” 같은 물음이 있습니다.'],
+    ['선', '禪', '산스크리트 디야나(dhyāna)의 음역. 마음을 고요히 모아 깨어 있는 수행.'],
+    ['열반', '涅槃', '번뇌의 불이 꺼진 고요하고 자유로운 경지.'],
+    ['해탈', '解脫', '번뇌와 집착의 속박에서 벗어남.'],
+    ['윤회', '輪廻', '업(業)에 따라 생사가 수레바퀴처럼 거듭된다는 가르침.'],
+    ['업', '業', '몸·입·뜻으로 짓는 행위. 그 행위는 결과를 낳습니다.'],
+    ['인과', '因果', '원인이 있으면 결과가 있다는 이치.'],
+    ['연기', '緣起', '모든 것은 서로 의지해 생겨나고 사라진다는 가르침.'],
+    ['공', '空', '모든 것에 고정불변의 실체가 없다는 뜻. 아무것도 없다는 허무가 아닙니다.'],
+    ['무상', '無常', '모든 것은 끊임없이 변한다는 사실.'],
+    ['무아', '無我', '변하지 않는 ‘나’라는 실체는 없다는 가르침.'],
+    ['불이', '不二', '둘로 나누어 보는 분별을 넘어, 본래 둘이 아니라는 이치.'],
+    ['자비', '慈悲', '자(慈)는 기쁨을 주는 마음, 비(悲)는 괴로움을 덜어주는 마음.'],
+    ['보시', '布施', '조건 없이 베푸는 실천. 재물·가르침·두려움 없애줌이 있습니다.'],
+    ['지계', '持戒', '계율을 지켜 몸과 말과 마음을 맑게 함.'],
+    ['인욕', '忍辱', '모욕과 어려움을 참고 견디는 수행.'],
+    ['정진', '精進', '게으름 없이 바르게 노력함.'],
+    ['보살', '菩薩', '깨달음을 구하며 모든 중생을 이롭게 하려는 이. 보리살타의 줄임말.'],
+    ['중생', '衆生', '살아 있는 모든 존재.'],
+    ['삼보', '三寶', '부처님(佛)·가르침(法)·스님들의 공동체(僧). 불자가 귀의하는 세 가지 보배.'],
+    ['스님', '僧', '출가하여 수행하는 이를 높여 부르는 말.'],
+    ['가사', '袈裟', '스님이 승복 위에 두르는 법의. 여러 조각을 이어 붙인 모양에서 ‘밭(복전)’을 뜻합니다.'],
+    ['일주문', '一柱門', '사찰 입구의 기둥이 한 줄로 선 문. 한마음으로 들어오라는 뜻이 담겨 있습니다.'],
+    ['산사', '山寺', '산속에 자리한 절.'],
+    ['템플스테이', 'Temple Stay', '사찰에서 하룻밤을 지내며 예불·참선·발우공양 등 수행 문화를 체험하는 프로그램.']
+];
+
+const chip = (a, hj, d) => `<div class="sc-chip"><b>${a}${hj ? ` <span class="hj">${hj}</span>` : ''}</b><span class="d">${d}</span></div>`;
+const sec = (t, hj, body) => `<section class="sc-sec"><h3>${t}${hj ? ` <span class="hj">${hj}</span>` : ''}</h3>${body}</section>`;
+const quote = (hj, ko, src, note) => `<blockquote class="sc-q"><span class="hj">${hj}</span><div class="ko">${ko}</div>${note ? `<p class="note">${note}</p>` : ''}<footer>${src}</footer></blockquote>`;
+
+function scSutra() {
+    return `
+    <div class="sc-lead">한국 사찰에서 가장 널리 독송되는 경전의 하나입니다. 짧은 글 속에 ‘공(空)’의 지혜가 담겨 있습니다. 아래 <b>독송 시작</b>을 누르면 목탁 소리에 맞춰 한 구절씩 밝혀집니다.</div>
+    <div class="sutra-head"><span class="hj">摩訶般若波羅蜜多心經</span><span class="big">마하반야바라밀다심경</span></div>
+    <div style="text-align:center"><button class="sc-act alt" id="scChant"><i class="fa-solid fa-drum"></i> <span>독송 시작</span></button></div>
+    ${SUTRA.map(l => `<div class="sutra-line"><span class="hj">${l[0]}</span><div class="ko">${l[1]}</div><div class="mean">${l[2]}</div></div>`).join('')}
+    ${sec('한 줄로 읽는 반야심경', '', `<p>눈에 보이는 모든 것과 마음의 작용은 인연 따라 잠시 모인 것이라 고정된 실체가 없습니다(空). 그 사실을 바로 보면 매달릴 것도, 두려울 것도 없어집니다. 그래서 마지막 주문은 “건너가세, 함께 건너가세”로 끝납니다.</p>`)}
+    `;
+}
+function scDoctrine() {
+    return `
+    <div class="sc-lead">부처님 가르침의 뼈대가 되는 가르침들을 쉬운 말로 정리했습니다.</div>
+    ${sec('삼법인', '三法印', `<p>세상을 바르게 보는 세 가지 도장입니다. 여기에 일체개고(一切皆苦)를 더해 사법인이라고도 합니다.</p><div class="sc-grid">
+        ${chip('제행무상', '諸行無常', '모든 것은 쉬지 않고 변합니다.')}
+        ${chip('제법무아', '諸法無我', '변하지 않는 고정된 ‘나’는 없습니다.')}
+        ${chip('열반적정', '涅槃寂靜', '번뇌가 꺼진 자리가 고요한 평화입니다.')}</div>`)}
+    ${sec('사성제', '四聖諦', `<p>괴로움의 진단과 치유를 네 단계로 밝힌 첫 가르침입니다.</p><div class="sc-grid">
+        ${chip('고', '苦', '삶에는 괴로움이 있다.')}
+        ${chip('집', '集', '괴로움에는 원인(갈애·집착)이 있다.')}
+        ${chip('멸', '滅', '괴로움이 사라진 경지가 있다.')}
+        ${chip('도', '道', '그 경지에 이르는 길이 있다.')}</div>`)}
+    ${sec('팔정도', '八正道', `<p>괴로움을 끝내는 여덟 가지 바른 길입니다.</p><div class="sc-grid">
+        ${chip('정견', '正見', '있는 그대로 바르게 봄')}
+        ${chip('정사유', '正思惟', '바르게 생각함')}
+        ${chip('정어', '正語', '진실하고 부드러운 말')}
+        ${chip('정업', '正業', '해치지 않는 행동')}
+        ${chip('정명', '正命', '바른 방법으로 생계를 이음')}
+        ${chip('정정진', '正精進', '바른 노력')}
+        ${chip('정념', '正念', '지금 이 순간을 알아차림')}
+        ${chip('정정', '正定', '마음을 모아 고요히 머묾')}</div>`)}
+    ${sec('연기', '緣起', `<p>“이것이 있으므로 저것이 있고, 이것이 생기므로 저것이 생긴다. 이것이 없으면 저것이 없고, 이것이 사라지면 저것이 사라진다.” 모든 존재는 서로 기대어 있습니다. 그래서 나와 남을 가르는 벽도 본래는 얇습니다.</p>`)}
+    ${sec('중도', '中道', `<p>쾌락에 빠지는 길도, 고행에 매이는 길도 아닌 가운데 길. 치우치지 않는 바른 균형입니다.</p>`)}
+    ${sec('오온', '五蘊', `<p>‘나’라고 여기는 것을 이루는 다섯 가지 무더기입니다.</p><div class="sc-grid">
+        ${chip('색', '色', '몸과 물질')}${chip('수', '受', '느낌')}${chip('상', '想', '떠오르는 생각·인식')}${chip('행', '行', '의지·마음의 작용')}${chip('식', '識', '분별하고 아는 의식')}</div>`)}
+    ${sec('삼독', '三毒', `<p>마음을 병들게 하는 세 가지 뿌리 번뇌입니다.</p><div class="sc-grid">
+        ${chip('탐', '貪', '끝없이 원하는 욕심')}${chip('진', '瞋', '성냄')}${chip('치', '癡', '사물의 이치에 어두운 어리석음')}</div>`)}
+    ${sec('육바라밀', '六波羅蜜', `<p>보살이 피안(깨달음)의 언덕에 이르는 여섯 가지 실천입니다.</p><div class="sc-grid">
+        ${chip('보시', '布施', '조건 없이 베풂')}${chip('지계', '持戒', '계를 지킴')}${chip('인욕', '忍辱', '참고 견딤')}${chip('정진', '精進', '꾸준히 노력함')}${chip('선정', '禪定', '마음을 고요히 모음')}${chip('지혜', '智慧', '있는 그대로 꿰뚫어 봄')}</div>`)}
+    ${sec('사무량심', '四無量心', `<p>한없이 넓혀 가야 할 네 가지 마음입니다.</p><div class="sc-grid">
+        ${chip('자', '慈', '기쁨을 주려는 마음')}${chip('비', '悲', '괴로움을 덜어주려는 마음')}${chip('희', '喜', '남의 기쁨을 함께 기뻐함')}${chip('사', '捨', '치우침 없이 평등하게 대함')}</div>`)}
+    ${sec('사홍서원', '四弘誓願', `${quote('衆生無邊誓願度 煩惱無盡誓願斷<br>法門無量誓願學 佛道無上誓願成', '중생무변서원도 번뇌무진서원단<br>법문무량서원학 불도무상서원성', '법회의 마지막에 함께 외우는 서원', '가없는 중생을 건지겠다 · 끝없는 번뇌를 끊겠다 · 한없는 법문을 배우겠다 · 위없는 불도를 이루겠다는 네 가지 큰 다짐입니다.')}`)}
+    `;
+}
+function scVerses() {
+    return `
+    <div class="sc-lead">경전과 선사들의 한 구절은 길지 않지만 오래 곱씹을수록 깊어집니다. 천천히 소리 내어 읽어 보세요.</div>
+    ${quote('應無所住 而生其心', '응무소주 이생기심', '금강경', '머무는 바 없이 마음을 낸다. 어디에도 집착하지 않는 맑은 마음으로 행하라는 뜻입니다.')}
+    ${quote('凡所有相 皆是虛妄<br>若見諸相非相 卽見如來', '범소유상 개시허망 약견제상비상 즉견여래', '금강경', '모양 있는 모든 것은 허망하니, 모든 모양이 실체 아님을 보면 곧 여래를 본다.')}
+    ${quote('一切有爲法 如夢幻泡影<br>如露亦如電 應作如是觀', '일체유위법 여몽환포영 여로역여전 응작여시관', '금강경', '만들어진 모든 것은 꿈, 환영, 거품, 그림자 같고 이슬과 번개 같으니 이렇게 관하라.')}
+    ${quote('諸行無常 是生滅法<br>生滅滅已 寂滅爲樂', '제행무상 시생멸법 생멸멸이 적멸위락', '열반경', '모든 것은 변하니 나고 사라지는 법이다. 나고 사라짐마저 고요해질 때 참된 즐거움이 있다.')}
+    ${quote('自燈明 法燈明', '자등명 법등명', '부처님의 마지막 가르침', '자신을 등불로 삼고, 법을 등불로 삼아라. 남에게 기대지 말고 스스로 길을 밝히라는 당부입니다.')}
+    ${quote('身是菩提樹 心如明鏡臺<br>時時勤拂拭 勿使惹塵埃', '신시보리수 심여명경대 시시근불식 물사야진애', '신수 대사', '몸은 보리수요 마음은 밝은 거울이니, 때때로 부지런히 닦아 먼지가 끼지 않게 하라.')}
+    ${quote('菩提本無樹 明鏡亦非臺<br>本來無一物 何處惹塵埃', '보리본무수 명경역비대 본래무일물 하처야진애', '혜능 대사', '보리에는 본래 나무가 없고 거울 또한 받침이 아니다. 본래 한 물건도 없는데 어느 곳에 먼지가 끼랴.')}
+    ${quote('法性圓融無二相 諸法不動本來寂', '법성원융무이상 제법부동본래적', '의상 대사 · 법성게', '법의 참성품은 두루 원만하여 둘이 아니니, 모든 법은 본래 움직이지 않고 고요하다. 화엄사상을 210자로 압축한 노래의 첫머리입니다.')}
+    ${quote('心生則種種法生<br>心滅則種種法滅', '심생즉종종법생 심멸즉종종법멸', '원효 대사', '마음이 일어나면 갖가지 법이 생기고 마음이 사라지면 갖가지 법도 사라진다. 해골 물 일화와 함께 ‘일체유심조(一切唯心造)’의 가르침으로 전해집니다.')}
+    ${quote('', '산은 산이요, 물은 물이로다.', '성철 스님', '있는 그대로를 있는 그대로 보라는 법어입니다.')}
+    ${quote('', '모든 일은 마음이 앞서고, 마음이 주인이며, 마음이 만든다. 맑은 마음으로 말하고 행동하면 즐거움이 그림자처럼 따른다.', '법구경 · 쌍서품 (뜻풀이)', '')}
+    `;
+}
+function scGloss() {
+    return `
+    <div class="sc-lead">법당과 사찰에서 자주 만나는 말들입니다. 궁금한 말을 검색해 보세요. (한글·한자 모두 가능)</div>
+    <input id="scSearch" class="sc-search" type="search" placeholder="용어 검색 (예: 합장, 연기, 空)" autocomplete="off">
+    <div id="scTerms">${GLOSS.map(g => `<div class="sc-term" data-k="${(g[0] + ' ' + g[1] + ' ' + g[2]).toLowerCase()}"><b>${g[0]}</b><span class="hj">${g[1]}</span><p>${g[2]}</p></div>`).join('')}</div>
+    <div id="scEmpty" class="sc-empty" style="display:none">찾는 용어가 없습니다.</div>
+    `;
+}
+function scPractice() {
+    return `
+    <div class="sc-lead">법당에서 지켜 온 마음가짐과 간단한 수행법입니다.</div>
+    ${sec('삼귀의', '三歸依', `${quote('歸依佛 兩足尊<br>歸依法 離欲尊<br>歸依僧 衆中尊', '귀의불 양족존 · 귀의법 이욕존 · 귀의승 중중존', '삼귀의례', '복과 지혜를 두루 갖추신 부처님께, 욕심을 떠나게 하는 가르침에, 대중 가운데 으뜸인 스님들의 공동체에 귀의합니다.')}`)}
+    ${sec('삼배의 뜻', '三拜', `<p>세 번의 절은 <b>불(佛)·법(法)·승(僧)</b> 삼보에 각각 한 번씩 올리는 마음입니다. 이마를 바닥에 낮추며 “나”라는 높이를 내려놓는 것이 하심(下心)입니다.</p>
+        <div style="text-align:center"><button class="sc-act" id="scDoSam"><i class="fa-solid fa-hands-praying"></i> 법당에서 삼배 올리기</button></div>`)}
+    ${sec('오계', '五戒', `<div class="sc-grid">
+        ${chip('불살생', '不殺生', '살아 있는 것을 해치지 않기')}
+        ${chip('불투도', '不偸盜', '주지 않는 것을 가지지 않기')}
+        ${chip('불사음', '不邪婬', '바르지 못한 애욕을 삼가기')}
+        ${chip('불망어', '不妄語', '거짓말하지 않기')}
+        ${chip('불음주', '不飮酒', '정신을 흐리는 것을 삼가기')}</div>`)}
+    ${sec('호흡 명상', '', `<div class="sc-grid">
+        ${chip('1. 자세', '', '허리를 곧게 펴고 어깨의 힘을 뺍니다. 눈은 반쯤 감거나 편안히 내려 뜹니다.')}
+        ${chip('2. 숨 알기', '', '코끝으로 들고 나는 숨을 그저 알아차립니다. 고치려 하지 않습니다.')}
+        ${chip('3. 세기', '', '들숨 날숨을 한 번으로 세어 열까지 헤아리고 다시 하나로 돌아옵니다.')}
+        ${chip('4. 돌아오기', '', '생각이 달아나면 알아차리고 부드럽게 숨으로 돌아옵니다. 그것이 수행입니다.')}</div>`)}
+    ${sec('법당 예절', '', `<p>법당에 들어갈 때는 신발을 벗고 합장 반배합니다. 불상을 등지지 않고, 소리를 낮추며, 불단 앞을 가로질러 다니지 않습니다.</p>`)}
+    `;
+}
+const SC = [
+    { t: '반야심경', h: '般若心經', render: scSutra },
+    { t: '핵심 교리', h: '敎理', render: scDoctrine },
+    { t: '게송 · 법어', h: '偈頌', render: scVerses },
+    { t: '불교 용어', h: '用語', render: scGloss },
+    { t: '수행 안내', h: '修行', render: scPractice }
+];
+S.sc = { idx: 0, fs: 17, open: false, chant: null, busy: false };
+
+function playPage() {
+    initAudio(); const A = S.audio; if (!A) return; const { ctx, master } = A;
+    const len = Math.floor(ctx.sampleRate * 0.28), b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2);
+    const s = ctx.createBufferSource(); s.buffer = b;
+    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2600; f.Q.value = 0.7;
+    const g = ctx.createGain(); g.gain.value = 0.55 * Math.max(0.25, S.vol.moktak);
+    s.connect(f); f.connect(g); g.connect(master); s.start();
+}
+function stopChant() {
+    const c = S.sc.chant; if (!c) return;
+    c.timers.forEach(clearTimeout); S.sc.chant = null;
+    document.querySelectorAll('.sutra-line').forEach(l => l.classList.remove('reading'));
+    const b = $('scChant'); if (b) b.querySelector('span').textContent = '독송 시작';
+}
+function chantStep() {
+    const c = S.sc.chant; if (!c) return;
+    const lines = document.querySelectorAll('.sutra-line');
+    lines.forEach(l => l.classList.remove('reading'));
+    if (c.i >= lines.length) { stopChant(); playBell(1); return; }
+    const el = lines[c.i]; el.classList.add('reading'); el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    [0, 600, 1200, 1800].forEach(d => c.timers.push(setTimeout(() => playMoktak(1, 0.55), d)));
+    c.timers.push(setTimeout(() => { c.i++; chantStep(); }, 2500));
+}
+function toggleChant() {
+    if (S.sc.chant) { stopChant(); return; }
+    initAudio(); S.sc.chant = { i: 0, timers: [] }; $('scChant').querySelector('span').textContent = '독송 멈춤'; chantStep();
+}
+function scRender(i, animate) {
+    stopChant();
+    const page = $('scPage'), content = $('scContent');
+    const apply = () => {
+        S.sc.idx = i; content.innerHTML = SC[i].render(); page.scrollTop = 0;
+        document.querySelectorAll('.sc-tab').forEach((t, k) => t.classList.toggle('active', k === i));
+        const at = document.querySelector('.sc-tab.active'); if (at) at.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+        $('scPageNo').textContent = `${i + 1} / ${SC.length}`;
+        $('scPrev').disabled = i === 0; $('scNext').disabled = i === SC.length - 1;
+        const chant = $('scChant'); if (chant) chant.addEventListener('click', toggleChant);
+        const sam = $('scDoSam'); if (sam) sam.addEventListener('click', () => { closeScripture(); setTimeout(() => requestBow(3, true), 700); });
+        const q = $('scSearch');
+        if (q) q.addEventListener('input', () => {
+            const k = q.value.trim().toLowerCase(); let n = 0;
+            document.querySelectorAll('.sc-term').forEach(t => { const ok = !k || t.dataset.k.includes(k); t.style.display = ok ? '' : 'none'; if (ok) n++; });
+            $('scEmpty').style.display = n ? 'none' : 'block';
+        });
+    };
+    if (!animate) { apply(); return; }
+    if (S.sc.busy) return; S.sc.busy = true; playPage();
+    page.classList.add('turn-out');
+    setTimeout(() => { page.classList.remove('turn-out'); apply(); page.classList.add('turn-in'); setTimeout(() => { page.classList.remove('turn-in'); S.sc.busy = false; }, 460); }, 300);
+}
 function openScripture() {
-    const modal = $('scriptureModal'); modal.classList.remove('opacity-0', 'pointer-events-none');
-    modal.children[0].classList.remove('scale-95'); modal.children[0].classList.add('scale-100'); playBell(0.7);
+    if (S.sc.open) return; S.sc.open = true;
+    const m = $('scriptureModal'), cover = $('scCover'), burst = $('scBurst');
+    m.setAttribute('aria-hidden', 'false'); cover.classList.remove('opened'); S.sc.busy = false;
+    scRender(S.sc.idx, false);
+    $('scContent').style.setProperty('--sc-fs', S.sc.fs + 'px');
+    m.classList.add('show'); burst.classList.remove('go'); void burst.offsetWidth; burst.classList.add('go');
+    const pt = $('scPetals'); pt.innerHTML = '';
+    for (let k = 0; k < 18; k++) {
+        const p = document.createElement('span'); p.className = 'sc-petal';
+        p.style.left = (Math.random() * 100) + '%'; p.style.setProperty('--dx', (Math.random() * 160 - 80) + 'px');
+        p.style.animationDuration = (7 + Math.random() * 7) + 's'; p.style.animationDelay = (Math.random() * 6) + 's';
+        p.style.transform = `scale(${0.6 + Math.random() * 0.9})`; pt.appendChild(p);
+    }
+    playBell(0.8);
+    setTimeout(() => { if (!S.sc.open) return; cover.classList.add('opened'); playPage(); }, 800);
 }
 function closeScripture() {
-    const modal = $('scriptureModal'); modal.classList.add('opacity-0', 'pointer-events-none');
-    modal.children[0].classList.remove('scale-100'); modal.children[0].classList.add('scale-95');
+    if (!S.sc.open) return; S.sc.open = false; stopChant();
+    const m = $('scriptureModal'); m.classList.remove('show'); m.setAttribute('aria-hidden', 'true');
+}
+function scInit() {
+    const tabs = $('scTabs');
+    tabs.innerHTML = SC.map((s, i) => `<button class="sc-tab" data-i="${i}">${s.t}<span class="hj">${s.h}</span></button>`).join('');
+    tabs.addEventListener('click', e => { const b = e.target.closest('.sc-tab'); if (!b) return; const i = +b.dataset.i; if (i !== S.sc.idx) scRender(i, true); });
+    $('scPrev').addEventListener('click', () => { if (S.sc.idx > 0) scRender(S.sc.idx - 1, true); });
+    $('scNext').addEventListener('click', () => { if (S.sc.idx < SC.length - 1) scRender(S.sc.idx + 1, true); });
+    $('closeScripture').addEventListener('click', closeScripture);
+    $('scriptureModal').addEventListener('click', e => { if (e.target.id === 'scriptureModal' || e.target.classList.contains('sc-stage')) closeScripture(); });
+    const setFs = d => { S.sc.fs = clamp(S.sc.fs + d, 14, 26); $('scContent').style.setProperty('--sc-fs', S.sc.fs + 'px'); };
+    $('scFontUp').addEventListener('click', () => setFs(1.5)); $('scFontDown').addEventListener('click', () => setFs(-1.5));
+    // 좌우로 쓸어 넘기기
+    let sx = 0, sy = 0; const pg = $('scPage');
+    pg.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    pg.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+        if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.8) {
+            if (dx < 0 && S.sc.idx < SC.length - 1) scRender(S.sc.idx + 1, true);
+            else if (dx > 0 && S.sc.idx > 0) scRender(S.sc.idx - 1, true);
+        }
+    }, { passive: true });
 }
 function initUI() {
     // 키보드
     const map = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', ArrowUp: 'w', ArrowLeft: 'a', ArrowDown: 's', ArrowRight: 'd' };
     window.addEventListener('keydown', e => {
+        if (S.sc && S.sc.open) { if (e.code === 'Escape') closeScripture(); return; }
         if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) requestBow(1); return; }
         if (map[e.code]) { S.keys[map[e.code]] = true; e.preventDefault(); }
     });
@@ -1234,20 +1636,13 @@ function initUI() {
     // 버튼
     $('btnWeather').addEventListener('click', () => { initAudio(); setWeather((S.weatherIndex + 1) % WX.length); });
     $('btnScripture').addEventListener('click', openScripture);
-    $('closeScripture').addEventListener('click', closeScripture);
     $('btnAudio').addEventListener('click', () => { initAudio(); $('audioPanel').classList.toggle('hidden'); });
     $('closeAudioPanel').addEventListener('click', () => $('audioPanel').classList.add('hidden'));
     $('btnManualMoktak').addEventListener('click', () => playMoktak());
     $('btnBellChime').addEventListener('click', () => playBell());
     $('moktakVol').addEventListener('input', e => { S.vol.moktak = e.target.value / 100; $('moktakVolVal').innerText = `${e.target.value}%`; });
     $('ambVol').addEventListener('input', e => { S.vol.amb = e.target.value / 100; $('ambVolVal').innerText = `${e.target.value}%`; });
-    document.querySelectorAll('.scripture-tab').forEach(tab => {
-        tab.addEventListener('click', e => {
-            document.querySelectorAll('.scripture-tab').forEach(t => { t.classList.remove('border-amber-900', 'text-amber-950', 'font-bold'); t.classList.add('border-transparent', 'text-stone-600'); });
-            e.currentTarget.classList.add('border-amber-900', 'text-amber-950', 'font-bold'); e.currentTarget.classList.remove('border-transparent', 'text-stone-600');
-            document.querySelectorAll('.scripture-content').forEach(c => c.classList.add('hidden')); $(e.currentTarget.getAttribute('data-tab')).classList.remove('hidden');
-        });
-    });
+    scInit();
     $('btnEnter').addEventListener('click', () => {
         S.entered = true; initAudio(); $('intro').classList.add('hide'); setTimeout(() => $('intro').style.display = 'none', 1000);
         playBell(1); setTimeout(() => toast(isTouch ? '왼쪽 조이스틱으로 이동하고,<br>오른쪽 <b>절</b> 버튼으로 절을 올리세요' : 'WASD로 이동하고 Space로 절을 올리세요'), 1200);
