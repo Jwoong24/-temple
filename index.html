@@ -1,12 +1,849 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GitHub 테스트 페이지</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>산사 3D - 법당 마음 수행</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Serif+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body {
+            font-family: 'Gowun Batang', 'Noto Serif KR', serif;
+            background-color: #0c0a09;
+            color: #f3e9d2;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .hanji-bg {
+            background-color: #f5eedc;
+            background-image: radial-gradient(#dfd1b8 1px, transparent 0);
+            background-size: 16px 16px;
+            color: #2c221e;
+        }
+        .wood-border {
+            border: 8px solid #3d271d;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .ui-glass {
+            background: rgba(18, 12, 8, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(217, 119, 6, 0.35);
+        }
+    </style>
 </head>
-<body>
-  <h1>Hello, GitHub!</h1>
-  <p>첫 번째 HTML 파일 업로드 테스트입니다.</p>
+<body class="w-screen h-screen relative flex flex-col justify-between items-center overflow-hidden">
+
+    <!-- 3D Canvas -->
+    <div id="canvasContainer" class="absolute inset-0 w-full h-full z-0"></div>
+
+    <!-- Header UI -->
+    <header class="relative z-10 w-full p-4 md:p-6 flex justify-between items-start pointer-events-none">
+        <div class="ui-glass p-4 rounded-2xl text-amber-100 max-w-xs md:max-w-md shadow-2xl pointer-events-auto border-amber-700/50">
+            <h1 class="text-xl md:text-2xl font-bold tracking-widest text-amber-400 flex items-center gap-2">
+                <span class="text-amber-500 font-normal">☸</span> 적묵당 (寂默堂)
+            </h1>
+            <p class="text-xs md:text-sm text-amber-200/90 mt-1 leading-relaxed">
+                고요한 3D 법당에서 스님이 되어 정성껏 삼배(三拜)를 올리세요.
+            </p>
+            <div id="weatherStatus" class="mt-2 text-xs text-amber-300 flex items-center gap-2 border-t border-amber-800/50 pt-2">
+                <i class="fa-solid fa-sun text-yellow-400"></i> <span>화창한 산사의 낮</span>
+            </div>
+        </div>
+
+        <!-- Top Right Action Controls -->
+        <div class="flex gap-3 pointer-events-auto">
+            <!-- Weather Cycle Toggle -->
+            <button id="btnWeather" class="ui-glass hover:bg-amber-950/80 text-amber-200 p-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 border-amber-600/50">
+                <i id="weatherIcon" class="fa-solid fa-sun text-lg text-yellow-400"></i>
+            </button>
+
+            <!-- Scriptures Book Button -->
+            <button id="btnScripture" class="ui-glass hover:bg-amber-900/80 text-amber-100 px-5 py-3 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-2 font-medium border-amber-500/60">
+                <i class="fa-solid fa-book-open text-amber-300"></i>
+                <span class="hidden sm:inline">불경 법서(法書)</span>
+            </button>
+
+            <!-- Audio Settings Panel Toggle -->
+            <button id="btnAudio" class="ui-glass hover:bg-amber-950/80 text-amber-200 p-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 border-amber-600/50">
+                <i id="audioIcon" class="fa-solid fa-volume-high text-lg text-amber-400"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Bottom Controls HUD -->
+    <footer class="relative z-10 w-full p-4 md:p-6 flex justify-between items-end gap-4 pointer-events-none">
+        <div class="ui-glass px-5 py-3.5 rounded-2xl text-xs md:text-sm text-amber-100 shadow-2xl flex items-center gap-4 pointer-events-auto border-amber-700/50">
+            <div class="flex items-center gap-1.5">
+                <span class="bg-amber-950/80 text-amber-300 border border-amber-600/60 px-2.5 py-1 rounded font-mono font-bold">W A S D</span>
+                <span class="text-amber-200">3D 이동</span>
+            </div>
+            <div class="h-4 w-px bg-amber-700/60"></div>
+            <div class="flex items-center gap-1.5">
+                <span class="bg-amber-950/80 text-amber-300 border border-amber-600/60 px-3 py-1 rounded font-mono font-bold">Space</span>
+                <span class="text-amber-200">불상 향해 절하기</span>
+            </div>
+        </div>
+
+        <div class="ui-glass px-5 py-3.5 rounded-2xl text-amber-200 shadow-2xl pointer-events-auto flex items-center gap-3 border-amber-700/50">
+            <i class="fa-solid fa-hands-praying text-amber-400 text-xl"></i>
+            <span id="bowCountText">올린 절: <strong class="text-amber-300 font-bold text-lg">0</strong> 배</span>
+        </div>
+    </footer>
+
+    <!-- AUDIO CONTROLS PANEL MODAL -->
+    <div id="audioPanel" class="hidden fixed top-24 right-6 z-30 ui-glass text-amber-100 p-6 rounded-2xl shadow-2xl w-80 border-amber-600/60">
+        <div class="flex justify-between items-center mb-4 border-b border-amber-800/50 pb-3">
+            <h3 class="font-bold text-amber-400 flex items-center gap-2">
+                <i class="fa-solid fa-music"></i> 수행 음향 설정
+            </h3>
+            <button id="closeAudioPanel" class="text-stone-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <div class="space-y-4 text-sm">
+            <div>
+                <div class="flex justify-between text-xs mb-1.5">
+                    <span class="text-amber-200/90">목탁 소리 크기</span>
+                    <span id="moktakVolVal" class="text-amber-400 font-bold">70%</span>
+                </div>
+                <input type="range" id="moktakVol" min="0" max="100" value="70" class="w-full accent-amber-500 cursor-pointer">
+            </div>
+            <div class="pt-3 border-t border-amber-900/50 flex flex-col gap-2">
+                <button id="btnManualMoktak" class="w-full py-2.5 bg-amber-900/70 hover:bg-amber-800 border border-amber-500/50 text-amber-100 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow">
+                    <i class="fa-solid fa-drum"></i> 직접 목탁 두드리기
+                </button>
+                <button id="btnBellChime" class="w-full py-2.5 bg-amber-950/70 hover:bg-amber-900 border border-amber-600/50 text-amber-200 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow">
+                    <i class="fa-solid fa-bell"></i> 은은한 경쇠 소리
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTURES SCRIPTURE MODAL -->
+    <div id="scriptureModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="relative w-full max-w-3xl max-h-[90vh] hanji-bg wood-border rounded-2xl p-6 md:p-10 flex flex-col justify-between shadow-2xl text-stone-900 transform scale-95 transition-transform duration-300">
+            <button id="closeScripture" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-stone-800 text-amber-100 flex items-center justify-center hover:bg-amber-900 transition shadow">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center border-b-2 border-amber-900/20 pb-4 mb-4">
+                <span class="text-xs tracking-widest text-amber-900 uppercase font-semibold">대승불교의 지혜</span>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-amber-950 mt-1 tracking-wide">마음 수행 불경 (法書)</h2>
+            </div>
+            <div class="flex border-b border-amber-900/20 mb-4 overflow-x-auto gap-2 text-sm">
+                <button class="scripture-tab px-4 py-2 font-bold border-b-2 border-amber-900 text-amber-950" data-tab="tab-hanya">반야심경(般若心經)</button>
+                <button class="scripture-tab px-4 py-2 text-stone-600 border-b-2 border-transparent hover:text-amber-900" data-tab="tab-terms">핵심 불교 사상</button>
+                <button class="scripture-tab px-4 py-2 text-stone-600 border-b-2 border-transparent hover:text-amber-900" data-tab="tab-quotes">선사들의 게송</button>
+            </div>
+            <div class="overflow-y-auto max-h-[55vh] pr-2 leading-relaxed text-stone-800 text-sm md:text-base space-y-4">
+                <div id="tab-hanya" class="scripture-content space-y-4">
+                    <div class="bg-amber-900/5 p-4 rounded-xl border border-amber-900/10">
+                        <h3 class="font-bold text-amber-900 text-lg mb-2">마하반야바라밀다심경 (摩訶般若波羅蜜多心經)</h3>
+                        <p class="italic text-stone-700 text-xs md:text-sm mb-3">"지혜의 완성으로 다다르는 가장 으뜸가는 마음의 경전"</p>
+                        <p class="mb-3 leading-relaxed">
+                            <strong>관자재보살 행심반야바라밀다시 조견오온개공 도일체고액...</strong><br>
+                            관자재보살이 깊은 반야바라밀다를 행할 때, 오온이 모두 비어 있음을 비추어 보고 모든 괴로움과 재앙을 건넜느니라.
+                        </p>
+                        <div class="p-3 bg-white/70 rounded-lg text-stone-900 font-semibold my-2 border-l-4 border-amber-700">
+                            "색불이공 공불이색 색즉시공 공즉시색 (色不異空 空不異色 色即是空 空即是色)"
+                        </div>
+                        <p class="text-xs text-stone-600 mt-2">
+                            물질적인 형태가 본래 비어 있음과 다르지 않고, 비어 있음이 물질적인 형태와 다르지 아니하며, 물질이 곧 비어 있음이요 비어 있음이 곧 물질이니라.
+                        </p>
+                    </div>
+                </div>
+                <div id="tab-terms" class="scripture-content hidden space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10">
+                            <h4 class="font-bold text-amber-900 text-base mb-1">제행무상 (諸行無常)</h4>
+                            <p class="text-xs md:text-sm text-stone-700">세상의 모든 존재와 현상은 잠시도 고정되어 있지 않고 끊임없이 흘러갑니다.</p>
+                        </div>
+                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10">
+                            <h4 class="font-bold text-amber-900 text-base mb-1">연기법 (緣起法)</h4>
+                            <p class="text-xs md:text-sm text-stone-700">이것이 있으므로 저것이 있고, 이것이 생김으로 저것이 생겨납니다.</p>
+                        </div>
+                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10">
+                            <h4 class="font-bold text-amber-900 text-base mb-1">자비 (慈悲)</h4>
+                            <p class="text-xs md:text-sm text-stone-700">모든 생명에게 기쁨을 주고(慈), 괴로움을 거두어주는(悲) 맑은 마음입니다.</p>
+                        </div>
+                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10">
+                            <h4 class="font-bold text-amber-900 text-base mb-1">해탈 (解脫)</h4>
+                            <p class="text-xs md:text-sm text-stone-700">모든 번뇌와 집착의 굴레에서 벗어나 완전한 마음의 평온을 얻음입니다.</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="tab-quotes" class="scripture-content hidden space-y-3">
+                    <blockquote class="p-4 bg-amber-900/5 rounded-xl border-l-4 border-amber-800 text-stone-800 italic">
+                        "마음이 일어나면 갖가지 법이 생겨나고, 마음이 사라지면 갖가지 법도 사라진다."
+                        <footer class="text-right not-italic text-xs text-amber-900 mt-1.5 font-bold">- 원효대사 (元曉大師)</footer>
+                    </blockquote>
+                    <blockquote class="p-4 bg-amber-900/5 rounded-xl border-l-4 border-amber-800 text-stone-800 italic">
+                        "산은 산이요, 물은 물이로다."
+                        <footer class="text-right not-italic text-xs text-amber-900 mt-1.5 font-bold">- 성철스님</footer>
+                    </blockquote>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-amber-900/20 text-center text-xs text-stone-600 flex justify-between items-center">
+                <span>두 손을 모아 합장하고 평온한 호흡을 하세요.</span>
+                <span class="font-bold text-amber-900">성불(成佛)하십시오 🙏</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN 3D APPLICATION LOGIC -->
+    <script>
+        // --- GLOBAL APP STATE ---
+        const state = {
+            scene: null,
+            camera: null,
+            renderer: null,
+            clock: new THREE.Clock(),
+            weather: 'clear', // clear, rain, night
+            weatherIndex: 0,
+            weathers: [
+                { id: 'clear', name: '화창한 산사의 낮', icon: 'fa-sun text-yellow-400' },
+                { id: 'rain', name: '고즈넉한 비 내리는 법당', icon: 'fa-cloud-showers-heavy text-blue-400' },
+                { id: 'night', name: '촛불 밝힌 운치있는 밤', icon: 'fa-moon text-amber-300' }
+            ],
+            bowCount: 0,
+            isBowing: false,
+            bowTimer: 0,
+            keys: { w: false, a: false, s: false, d: false },
+            audioCtx: null,
+            volumes: { moktak: 0.7 },
+            
+            // 3D Objects References
+            monkGroup: null,
+            monkParts: {},
+            candles: [],
+            smokeParticles: [],
+            rainSystem: null,
+            dirLight: null,
+            hemiLight: null,
+            statueAura: null,
+            bookDesk: null
+        };
+
+        // --- INITIALIZATION ---
+        window.addEventListener('load', () => {
+            init3DScene();
+            buildTempleEnvironment();
+            buildBuddhaStatue();
+            buildMonkCharacter();
+            buildInteractiveProps();
+            initWeatherSystems();
+            initUIAndEvents();
+
+            // Start Main 3D Render Loop
+            animate();
+        });
+
+        // --- THREE.JS SCENE SETUP ---
+        function init3DScene() {
+            const container = document.getElementById('canvasContainer');
+            state.scene = new THREE.Scene();
+            state.scene.background = new THREE.Color(0xfef08a);
+            state.scene.fog = new THREE.FogExp2(0xdfe7f1, 0.025);
+
+            state.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+            state.camera.position.set(0, 3.8, 8.5);
+            state.camera.lookAt(0, 2.0, 0);
+
+            state.renderer = new THREE.WebGLRenderer({ antialias: true });
+            state.renderer.setSize(window.innerWidth, window.innerHeight);
+            state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            state.renderer.shadowMap.enabled = true;
+            state.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            state.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            state.renderer.toneMappingExposure = 1.1;
+
+            container.appendChild(state.renderer.domElement);
+
+            // Lighting Setup
+            state.hemiLight = new THREE.HemisphereLight(0xfffbeb, 0x451a03, 0.9);
+            state.scene.add(state.hemiLight);
+
+            state.dirLight = new THREE.DirectionalLight(0xfff5d6, 1.4);
+            state.dirLight.position.set(6, 12, 8);
+            state.dirLight.castShadow = true;
+            state.dirLight.shadow.mapSize.width = 2048;
+            state.dirLight.shadow.mapSize.height = 2048;
+            state.dirLight.shadow.camera.near = 0.5;
+            state.dirLight.shadow.camera.far = 25;
+            state.dirLight.shadow.camera.left = -8;
+            state.dirLight.shadow.camera.right = 8;
+            state.dirLight.shadow.camera.top = 8;
+            state.dirLight.shadow.camera.bottom = -8;
+            state.scene.add(state.dirLight);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function onWindowResize() {
+            state.camera.aspect = window.innerWidth / window.innerHeight;
+            state.camera.updateProjectionMatrix();
+            state.renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- PROCEDURAL 3D TEMPLE ENVIRONMENT ---
+        function buildTempleEnvironment() {
+            const scene = state.scene;
+
+            // Wooden Floor
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0x6e3c1b, roughness: 0.4, metalness: 0.1 });
+            const floor = new THREE.Mesh(new THREE.BoxGeometry(14, 0.3, 12), floorMat);
+            floor.position.set(0, -0.15, 0);
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            // Red Worship Runner Carpet
+            const carpetMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.7 });
+            const carpet = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.02, 9), carpetMat);
+            carpet.position.set(0, 0.01, 0.5);
+            carpet.receiveShadow = true;
+            scene.add(carpet);
+
+            // Worship Mat Cushion (방석)
+            const cushionMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.5 });
+            const cushion = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.15, 1.4), cushionMat);
+            cushion.position.set(0, 0.08, 1.8);
+            cushion.receiveShadow = true;
+            cushion.castShadow = true;
+            scene.add(cushion);
+
+            // Gold Trim on Cushion
+            const borderMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3, metalness: 0.6 });
+            const border = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.08, 1.45), borderMat);
+            border.position.set(0, 0.06, 1.8);
+            scene.add(border);
+
+            // Temple Pillars
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0x3d1e10, roughness: 0.6 });
+            const pillarGeo = new THREE.CylinderGeometry(0.35, 0.35, 6, 16);
+
+            [[-5.5, 3], [5.5, 3], [-5.5, -3], [5.5, -3]].forEach(pos => {
+                const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+                pillar.position.set(pos[0], 2.8, pos[1]);
+                pillar.castShadow = true;
+                pillar.receiveShadow = true;
+                scene.add(pillar);
+            });
+
+            // Back Wooden Wall & Scroll Hanging
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x452210, roughness: 0.7 });
+            const backWall = new THREE.Mesh(new THREE.BoxGeometry(14, 6, 0.3), wallMat);
+            backWall.position.set(0, 2.8, -4.5);
+            backWall.receiveShadow = true;
+            scene.add(backWall);
+
+            // Hanging Scroll (족자)
+            const scrollMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.9 });
+            const scroll = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 3.8), scrollMat);
+            scroll.position.set(0, 3.2, -4.32);
+            scene.add(scroll);
+
+            // Scroll Wooden Holders
+            const holderMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.3 });
+            const holderGeo = new THREE.CylinderGeometry(0.06, 0.06, 2.2, 12);
+            
+            const topHolder = new THREE.Mesh(holderGeo, holderMat);
+            topHolder.rotation.z = Math.PI / 2;
+            topHolder.position.set(0, 5.1, -4.3);
+            scene.add(topHolder);
+
+            const botHolder = topHolder.clone();
+            botHolder.position.set(0, 1.3, -4.3);
+            scene.add(botHolder);
+        }
+
+        // --- DETAILED 3D GOLDEN BUDDHA STATUE ---
+        function buildBuddhaStatue() {
+            const scene = state.scene;
+            const buddhaGroup = new THREE.Group();
+            buddhaGroup.position.set(0, 1.1, -3.2);
+
+            // Altar Table
+            const altarMat = new THREE.MeshStandardMaterial({ color: 0x271309, roughness: 0.4 });
+            const altar = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.0, 1.8), altarMat);
+            altar.position.set(0, -0.5, 0);
+            altar.castShadow = true;
+            altar.receiveShadow = true;
+            buddhaGroup.add(altar);
+
+            // Lotus Pedestal
+            const goldMat = new THREE.MeshStandardMaterial({
+                color: 0xfacc15,
+                metalness: 0.85,
+                roughness: 0.25,
+                envMapIntensity: 1.2
+            });
+
+            const lotusBase = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.35, 16), goldMat);
+            lotusBase.position.y = 0.15;
+            lotusBase.castShadow = true;
+            buddhaGroup.add(lotusBase);
+
+            // Buddha Legs (Crossed Lotus Pose)
+            const legs = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.28, 12, 24), goldMat);
+            legs.rotation.x = Math.PI / 2;
+            legs.position.y = 0.45;
+            legs.castShadow = true;
+            buddhaGroup.add(legs);
+
+            // Torso
+            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.65, 1.1, 16), goldMat);
+            torso.position.y = 1.05;
+            torso.castShadow = true;
+            buddhaGroup.add(torso);
+
+            // Head
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20, 20), goldMat);
+            head.position.y = 1.85;
+            head.castShadow = true;
+            buddhaGroup.add(head);
+
+            // Topknot (Ushnisha)
+            const topknot = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), goldMat);
+            topknot.position.y = 2.28;
+            buddhaGroup.add(topknot);
+
+            // Halo / Aura Disk
+            const auraGeo = new THREE.RingGeometry(0.2, 1.3, 32);
+            const auraMat = new THREE.MeshBasicMaterial({
+                color: 0xfef08a,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.8
+            });
+            state.statueAura = new THREE.Mesh(auraGeo, auraMat);
+            state.statueAura.position.set(0, 1.85, -0.2);
+            buddhaGroup.add(state.statueAura);
+
+            // Warm Light for Buddha Statue
+            const statueLight = new THREE.PointLight(0xfef08a, 1.2, 6);
+            statueLight.position.set(0, 2.0, 0.8);
+            buddhaGroup.add(statueLight);
+
+            scene.add(buddhaGroup);
+        }
+
+        // --- 3D MONK CHARACTER (PROPOSED HIGH QUALITY) ---
+        function buildMonkCharacter() {
+            state.monkGroup = new THREE.Group();
+            state.monkGroup.position.set(0, 0, 1.8);
+
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.6 });
+            const grayRobeMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.7 });
+            const saffronSashMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.6 });
+
+            // Body Robe (승복)
+            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, 1.1, 16), grayRobeMat);
+            body.position.y = 0.65;
+            body.castShadow = true;
+            state.monkGroup.add(body);
+
+            // Saffron Sash (가사)
+            const sash = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 0.8, 16, 1, false, 0, Math.PI * 1.2), saffronSashMat);
+            sash.position.y = 0.75;
+            sash.rotation.y = -0.4;
+            state.monkGroup.add(sash);
+
+            // Head (스님 두상)
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 20, 20), skinMat);
+            head.position.y = 1.38;
+            head.castShadow = true;
+            state.monkGroup.add(head);
+            state.monkParts.head = head;
+
+            // Joined Prayer Hands (합장)
+            const handsGroup = new THREE.Group();
+            handsGroup.position.set(0, 0.8, 0.32);
+
+            const handL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.08), skinMat);
+            handL.position.x = -0.04;
+            handL.rotation.z = -0.2;
+            const handR = handL.clone();
+            handR.position.x = 0.04;
+            handR.rotation.z = 0.2;
+
+            handsGroup.add(handL);
+            handsGroup.add(handR);
+            state.monkGroup.add(handsGroup);
+            state.monkParts.hands = handsGroup;
+
+            state.scene.add(state.monkGroup);
+        }
+
+        // --- INTERACTIVE CANDLES, INCENSE & BOOK DESK ---
+        function buildInteractiveProps() {
+            const scene = state.scene;
+
+            // Incense Burner & Smoke Particles
+            const burnerMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.3, metalness: 0.8 });
+            const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.22, 16), burnerMat);
+            burner.position.set(0, 0.72, -2.5);
+            scene.add(burner);
+
+            // Smoke Particle System
+            const smokeGeo = new THREE.BufferGeometry();
+            const count = 40;
+            const posArray = new Float32Array(count * 3);
+
+            for (let i = 0; i < count * 3; i += 3) {
+                posArray[i] = (Math.random() - 0.5) * 0.1;
+                posArray[i + 1] = 0.8 + Math.random() * 0.8;
+                posArray[i + 2] = -2.5 + (Math.random() - 0.5) * 0.1;
+            }
+            smokeGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+
+            const smokeMat = new THREE.PointsMaterial({
+                size: 0.08,
+                color: 0xe2e8f0,
+                transparent: true,
+                opacity: 0.4
+            });
+            const smoke = new THREE.Points(smokeGeo, smokeMat);
+            scene.add(smoke);
+            state.smokeParticles = smoke;
+
+            // Candles on Altar Left and Right
+            [-1.5, 1.5].forEach(x => {
+                const candleMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+                const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 12), candleMat);
+                candle.position.set(x, 0.8, -2.6);
+                scene.add(candle);
+
+                // Flame PointLight
+                const flameLight = new THREE.PointLight(0xf97316, 0.8, 3);
+                flameLight.position.set(x, 1.05, -2.6);
+                scene.add(flameLight);
+
+                state.candles.push(flameLight);
+            });
+
+            // Scripture Desk on Right Side
+            const deskMat = new THREE.MeshStandardMaterial({ color: 0x3d1e10, roughness: 0.5 });
+            state.bookDesk = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 0.8), deskMat);
+            state.bookDesk.position.set(3.8, 0.25, 1.8);
+            state.bookDesk.castShadow = true;
+            state.bookDesk.receiveShadow = true;
+            scene.add(state.bookDesk);
+
+            // Book on Desk
+            const bookMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.8 });
+            const book = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.35), bookMat);
+            book.position.set(3.8, 0.54, 1.8);
+            scene.add(book);
+        }
+
+        // --- WEATHER & RAIN PARTICLE SYSTEM ---
+        function initWeatherSystems() {
+            const rainCount = 600;
+            const rainGeo = new THREE.BufferGeometry();
+            const rainPos = new Float32Array(rainCount * 3);
+
+            for (let i = 0; i < rainCount * 3; i += 3) {
+                rainPos[i] = (Math.random() - 0.5) * 20;
+                rainPos[i + 1] = Math.random() * 12;
+                rainPos[i + 2] = (Math.random() - 0.5) * 20;
+            }
+
+            rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+            const rainMat = new THREE.PointsMaterial({
+                color: 0x38bdf8,
+                size: 0.06,
+                transparent: true,
+                opacity: 0.7
+            });
+
+            state.rainSystem = new THREE.Points(rainGeo, rainMat);
+            state.rainSystem.visible = false;
+            state.scene.add(state.rainSystem);
+        }
+
+        function toggleWeather() {
+            state.weatherIndex = (state.weatherIndex + 1) % state.weathers.length;
+            const current = state.weathers[state.weatherIndex];
+            state.weather = current.id;
+
+            document.getElementById('weatherStatus').innerHTML = `<i class="fa-solid ${current.icon}"></i> <span>${current.name}</span>`;
+            document.getElementById('weatherIcon').className = `fa-solid ${current.icon} text-lg`;
+
+            if (state.weather === 'clear') {
+                state.scene.background.setHex(0xfef08a);
+                state.scene.fog.color.setHex(0xdfe7f1);
+                state.dirLight.intensity = 1.4;
+                state.dirLight.color.setHex(0xfff5d6);
+                state.rainSystem.visible = false;
+            } else if (state.weather === 'rain') {
+                state.scene.background.setHex(0x475569);
+                state.scene.fog.color.setHex(0x334155);
+                state.dirLight.intensity = 0.5;
+                state.dirLight.color.setHex(0x94a3b8);
+                state.rainSystem.visible = true;
+            } else if (state.weather === 'night') {
+                state.scene.background.setHex(0x0f172a);
+                state.scene.fog.color.setHex(0x1e1b4b);
+                state.dirLight.intensity = 0.2;
+                state.dirLight.color.setHex(0x818cf8);
+                state.rainSystem.visible = false;
+            }
+        }
+
+        // --- CONTROLS & BOW ANIMATION ENGINE ---
+        function triggerBow() {
+            if (state.isBowing) return;
+
+            state.isBowing = true;
+            state.bowTimer = 0;
+
+            // Turn Monk towards Buddha
+            state.monkGroup.rotation.y = 0;
+
+            playMoktakSound();
+            setTimeout(() => playBellChime(), 1200);
+        }
+
+        function updateMonkMovement(delta) {
+            if (state.isBowing) {
+                state.bowTimer += delta * 1.2;
+
+                // Bowing Prostration Curve (0 ~ Math.PI)
+                const bowProgress = Math.min(state.bowTimer, Math.PI);
+                const bowAngle = Math.sin(bowProgress);
+
+                // Head bows down to mat, Body bends
+                state.monkGroup.position.y = -bowAngle * 0.35;
+                state.monkGroup.rotation.x = bowAngle * 1.35;
+
+                if (state.bowTimer >= Math.PI) {
+                    state.isBowing = false;
+                    state.bowTimer = 0;
+                    state.monkGroup.position.y = 0;
+                    state.monkGroup.rotation.x = 0;
+                    state.bowCount++;
+                    document.getElementById('bowCountText').innerHTML = `올린 절: <strong class="text-amber-300 font-bold text-lg">${state.bowCount}</strong> 배`;
+                    playMoktakSound(0.9);
+                }
+                return;
+            }
+
+            // WASD Walking Logic
+            const speed = 2.8 * delta;
+            let moveX = 0;
+            let moveZ = 0;
+
+            if (state.keys.w) moveZ -= 1;
+            if (state.keys.s) moveZ += 1;
+            if (state.keys.a) moveX -= 1;
+            if (state.keys.d) moveX += 1;
+
+            if (moveX !== 0 || moveZ !== 0) {
+                const angle = Math.atan2(moveX, moveZ);
+                state.monkGroup.rotation.y = angle;
+
+                const nextX = state.monkGroup.position.x + moveX * speed;
+                const nextZ = state.monkGroup.position.z + moveZ * speed;
+
+                // Bounds restriction inside temple
+                state.monkGroup.position.x = Math.max(-5.0, Math.min(5.0, nextX));
+                state.monkGroup.position.z = Math.max(-1.8, Math.min(4.5, nextZ));
+
+                // Subtle walking bounce
+                state.monkGroup.position.y = Math.abs(Math.sin(state.clock.getElapsedTime() * 10)) * 0.08;
+            } else {
+                state.monkGroup.position.y = 0;
+            }
+        }
+
+        // --- WEB AUDIO SYNTHESIZER ---
+        function initAudioContext() {
+            if (!state.audioCtx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                state.audioCtx = new AudioCtx();
+            }
+            if (state.audioCtx.state === 'suspended') {
+                state.audioCtx.resume();
+            }
+        }
+
+        function playMoktakSound(pitchMod = 1.0) {
+            initAudioContext();
+            if (!state.audioCtx) return;
+
+            const now = state.audioCtx.currentTime;
+            const osc = state.audioCtx.createOscillator();
+            const gain = state.audioCtx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(580 * pitchMod, now);
+            osc.frequency.exponentialRampToValueAtTime(180 * pitchMod, now + 0.09);
+
+            gain.gain.setValueAtTime(0.8 * state.volumes.moktak, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+            osc.connect(gain);
+            gain.connect(state.audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.11);
+        }
+
+        function playBellChime() {
+            initAudioContext();
+            if (!state.audioCtx) return;
+
+            const now = state.audioCtx.currentTime;
+            [432, 864].forEach((freq, i) => {
+                const osc = state.audioCtx.createOscillator();
+                const gain = state.audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(0.25 / (i + 1), now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
+
+                osc.connect(gain);
+                gain.connect(state.audioCtx.destination);
+
+                osc.start(now);
+                osc.stop(now + 3.3);
+            });
+        }
+
+        // --- MAIN RENDER & ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = state.clock.getDelta();
+            const elapsed = state.clock.getElapsedTime();
+
+            // Update Monk Controls & Bow Animation
+            updateMonkMovement(delta);
+
+            // Candle Flame Flicker Effects
+            state.candles.forEach((candle, idx) => {
+                candle.intensity = 0.7 + Math.sin(elapsed * 12 + idx) * 0.25;
+            });
+
+            // Buddha Statue Aura Subtle Pulse
+            if (state.statueAura) {
+                state.statueAura.rotation.z = elapsed * 0.15;
+            }
+
+            // Smoke Particles Rise
+            if (state.smokeParticles) {
+                const pos = state.smokeParticles.geometry.attributes.position.array;
+                for (let i = 1; i < pos.length; i += 3) {
+                    pos[i] += delta * 0.3;
+                    if (pos[i] > 2.2) pos[i] = 0.8;
+                }
+                state.smokeParticles.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Rain Particles Fall
+            if (state.weather === 'rain' && state.rainSystem) {
+                const pos = state.rainSystem.geometry.attributes.position.array;
+                for (let i = 1; i < pos.length; i += 3) {
+                    pos[i] -= delta * 14;
+                    if (pos[i] < 0) pos[i] = 12;
+                }
+                state.rainSystem.geometry.attributes.position.needsUpdate = true;
+            }
+
+            // Camera Subtle Floating Focus
+            state.camera.position.x = Math.sin(elapsed * 0.4) * 0.2;
+
+            state.renderer.render(state.scene, state.camera);
+        }
+
+        // --- UI & EVENT BINDINGS ---
+        function initUIAndEvents() {
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    triggerBow();
+                    return;
+                }
+                const keyMap = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
+                if (keyMap[e.code]) state.keys[keyMap[e.code]] = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                const keyMap = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
+                if (keyMap[e.code]) state.keys[keyMap[e.code]] = false;
+            });
+
+            document.getElementById('btnWeather').addEventListener('click', toggleWeather);
+            document.getElementById('btnScripture').addEventListener('click', openScripture);
+            document.getElementById('closeScripture').addEventListener('click', closeScripture);
+            document.getElementById('btnAudio').addEventListener('click', () => {
+                initAudioContext();
+                document.getElementById('audioPanel').classList.toggle('hidden');
+            });
+            document.getElementById('closeAudioPanel').addEventListener('click', () => {
+                document.getElementById('audioPanel').classList.add('hidden');
+            });
+
+            document.getElementById('btnManualMoktak').addEventListener('click', () => playMoktakSound());
+            document.getElementById('btnBellChime').addEventListener('click', () => playBellChime());
+
+            document.getElementById('moktakVol').addEventListener('input', (e) => {
+                state.volumes.moktak = e.target.value / 100;
+                document.getElementById('moktakVolVal').innerText = `${e.target.value}%`;
+            });
+
+            // Scripture Modal Tabs Switch
+            document.querySelectorAll('.scripture-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.scripture-tab').forEach(t => {
+                        t.classList.remove('border-amber-900', 'text-amber-950', 'font-bold');
+                        t.classList.add('border-transparent', 'text-stone-600');
+                    });
+                    e.target.classList.add('border-amber-900', 'text-amber-950', 'font-bold');
+                    e.target.classList.remove('border-transparent', 'text-stone-600');
+
+                    const target = e.target.getAttribute('data-tab');
+                    document.querySelectorAll('.scripture-content').forEach(c => c.classList.add('hidden'));
+                    document.getElementById(target).classList.remove('hidden');
+                });
+            });
+        }
+
+        function openScripture() {
+            const modal = document.getElementById('scriptureModal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.children[0].classList.remove('scale-95');
+            modal.children[0].classList.add('scale-100');
+            playBellChime();
+        }
+
+        function closeScripture() {
+            const modal = document.getElementById('scriptureModal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.children[0].classList.remove('scale-100');
+            modal.children[0].classList.add('scale-95');
+        }
+    </script>
 </body>
 </html>
