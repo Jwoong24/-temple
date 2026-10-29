@@ -2,160 +2,225 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#0c0a09">
     <title>산사 3D - 법당 마음 수행</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Serif+KR:wght@300;400;600;700&display=swap" rel="stylesheet">
 
     <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+        html, body { overscroll-behavior: none; }
         body {
             font-family: 'Gowun Batang', 'Noto Serif KR', serif;
-            background-color: #0c0a09;
-            color: #f3e9d2;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-            width: 100vw;
-            height: 100vh;
+            background-color: #0c0a09; color: #f3e9d2;
+            overflow: hidden; margin: 0; padding: 0;
+            width: 100vw; height: 100vh; height: 100dvh;
+            touch-action: none;
         }
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
+        canvas { display: block; width: 100%; height: 100%; touch-action: none; }
         .hanji-bg {
             background-color: #f5eedc;
             background-image: radial-gradient(#dfd1b8 1px, transparent 0);
-            background-size: 16px 16px;
-            color: #2c221e;
+            background-size: 16px 16px; color: #2c221e;
         }
-        .wood-border {
-            border: 8px solid #3d271d;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.8);
-        }
+        .wood-border { border: 8px solid #3d271d; box-shadow: inset 0 0 15px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.8); }
         .ui-glass {
-            background: rgba(18, 12, 8, 0.75);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(18, 12, 8, 0.68);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(217, 119, 6, 0.35);
         }
+        .safe-top { padding-top: max(12px, env(safe-area-inset-top)); }
+        .safe-x { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+
+        /* ---- 터치 조작 UI ---- */
+        .touch-only { display: none; }
+        body.touch .touch-only { display: block; }
+        body.touch .desktop-only { display: none !important; }
+
+        #joyBase {
+            position: fixed; z-index: 20;
+            left: calc(22px + env(safe-area-inset-left)); bottom: calc(30px + env(safe-area-inset-bottom));
+            width: 136px; height: 136px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(251,191,36,.10), rgba(18,12,8,.55) 70%);
+            border: 1.5px solid rgba(251,191,36,.5);
+            box-shadow: 0 0 24px rgba(0,0,0,.5), inset 0 0 18px rgba(251,191,36,.12);
+            backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            touch-action: none;
+        }
+        #joyBase::before, #joyBase::after { content: ''; position: absolute; background: rgba(251,191,36,.18); }
+        #joyBase::before { left: 50%; top: 14px; bottom: 14px; width: 1px; }
+        #joyBase::after { top: 50%; left: 14px; right: 14px; height: 1px; }
+        #joyKnob {
+            position: absolute; left: 50%; top: 50%; width: 58px; height: 58px; margin: -29px 0 0 -29px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #fde68a, #d97706 60%, #92400e);
+            box-shadow: 0 4px 14px rgba(0,0,0,.6), inset 0 -3px 6px rgba(0,0,0,.25);
+            pointer-events: none;
+        }
+        #btnBowTouch {
+            position: fixed; z-index: 20;
+            right: calc(24px + env(safe-area-inset-right)); bottom: calc(40px + env(safe-area-inset-bottom));
+            width: 96px; height: 96px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #fde68a, #d97706 62%, #7c2d12);
+            border: 2px solid rgba(254,243,199,.8);
+            box-shadow: 0 6px 22px rgba(0,0,0,.65), 0 0 28px rgba(251,191,36,.35);
+            color: #3b1d0a; font-weight: 700; touch-action: none;
+            display: none; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05;
+        }
+        body.touch #btnBowTouch { display: flex; }
+        #btnBowTouch:active { transform: scale(.94); }
+        #btnSamTouch {
+            position: fixed; z-index: 20;
+            right: calc(36px + env(safe-area-inset-right)); bottom: calc(150px + env(safe-area-inset-bottom));
+            padding: 8px 16px; border-radius: 999px; touch-action: none;
+            font-size: 13px; font-weight: 700; color: #fde68a;
+        }
+
+        #toast {
+            position: fixed; left: 50%; top: 22%; transform: translate(-50%, -10px);
+            z-index: 60; padding: 14px 26px; border-radius: 16px;
+            opacity: 0; pointer-events: none; transition: all .6s ease; text-align: center;
+            color: #fde68a; font-size: 15px; letter-spacing: .04em; max-width: 88vw;
+        }
+        #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+        #intro {
+            position: fixed; inset: 0; z-index: 100;
+            background: radial-gradient(ellipse at 50% 40%, #3b2314 0%, #0c0a09 75%);
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+            transition: opacity .9s ease;
+        }
+        #intro.hide { opacity: 0; pointer-events: none; }
+        .intro-card { text-align: center; max-width: 420px; }
+        .intro-title { font-size: clamp(30px, 8vw, 44px); letter-spacing: .25em; color: #fbbf24; font-weight: 700; text-shadow: 0 0 30px rgba(251,191,36,.35); }
+        .lotus-btn {
+            margin-top: 34px; padding: 14px 36px; border-radius: 999px; font-size: 18px; font-weight: 700;
+            background: linear-gradient(180deg, #fde68a, #d97706); color: #3b1d0a;
+            box-shadow: 0 8px 30px rgba(251,191,36,.3); border: 1px solid #fef3c7; letter-spacing: .08em;
+        }
+        .lotus-btn:active { transform: scale(.96); }
     </style>
 </head>
 <body class="w-screen h-screen relative flex flex-col justify-between items-center overflow-hidden">
 
-    <!-- 3D Canvas -->
     <div id="canvasContainer" class="absolute inset-0 w-full h-full z-0"></div>
 
-    <!-- Header UI -->
-    <header class="relative z-10 w-full p-4 md:p-6 flex justify-between items-start pointer-events-none">
-        <div class="ui-glass p-4 rounded-2xl text-amber-100 max-w-xs md:max-w-md shadow-2xl pointer-events-auto border-amber-700/50">
-            <h1 class="text-xl md:text-2xl font-bold tracking-widest text-amber-400 flex items-center gap-2">
+    <!-- 시작 화면 -->
+    <div id="intro">
+        <div class="intro-card">
+            <div class="text-amber-500 text-5xl mb-4">☸</div>
+            <div class="intro-title">적묵당</div>
+            <div class="text-amber-200/80 mt-1 tracking-[0.5em] text-sm">寂 默 堂</div>
+            <p class="text-amber-100/80 mt-8 leading-relaxed text-sm md:text-base">
+                고요한 산사의 법당에서<br>스님이 되어 정성껏 삼배(三拜)를 올려보세요.
+            </p>
+            <button id="btnEnter" class="lotus-btn">법당에 들어가기 🙏</button>
+            <p class="text-amber-300/50 text-xs mt-6">소리가 나는 앱입니다 · 모바일은 왼쪽 조이스틱으로 이동, 오른쪽 버튼으로 절</p>
+        </div>
+    </div>
+
+    <!-- 헤더 -->
+    <header class="relative z-10 w-full safe-top safe-x pb-2 flex justify-between items-start pointer-events-none gap-2">
+        <div class="ui-glass p-3 md:p-4 rounded-2xl text-amber-100 max-w-[62vw] md:max-w-md shadow-2xl pointer-events-auto border-amber-700/50">
+            <h1 class="text-lg md:text-2xl font-bold tracking-widest text-amber-400 flex items-center gap-2">
                 <span class="text-amber-500 font-normal">☸</span> 적묵당 (寂默堂)
             </h1>
-            <p class="text-xs md:text-sm text-amber-200/90 mt-1 leading-relaxed">
+            <p class="text-xs md:text-sm text-amber-200/90 mt-1 leading-relaxed hidden sm:block">
                 고요한 3D 법당에서 스님이 되어 정성껏 삼배(三拜)를 올리세요.
             </p>
-            <div id="weatherStatus" class="mt-2 text-xs text-amber-300 flex items-center gap-2 border-t border-amber-800/50 pt-2">
+            <div id="weatherStatus" class="mt-1.5 text-[11px] md:text-xs text-amber-300 flex items-center gap-2 border-t border-amber-800/50 pt-1.5">
                 <i class="fa-solid fa-sun text-yellow-400"></i> <span>화창한 산사의 낮</span>
+            </div>
+            <div class="mt-1.5 text-xs md:text-sm text-amber-200 flex items-center gap-2">
+                <i class="fa-solid fa-hands-praying text-amber-400"></i>
+                <span id="bowCountText">올린 절: <strong class="text-amber-300 font-bold text-base">0</strong> 배</span>
             </div>
         </div>
 
-        <!-- Top Right Action Controls -->
-        <div class="flex gap-3 pointer-events-auto">
-            <!-- Weather Cycle Toggle -->
-            <button id="btnWeather" class="ui-glass hover:bg-amber-950/80 text-amber-200 p-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 border-amber-600/50">
+        <div class="flex gap-2 md:gap-3 pointer-events-auto">
+            <button id="btnWeather" aria-label="날씨 바꾸기" class="ui-glass hover:bg-amber-950/80 text-amber-200 w-11 h-11 md:w-12 md:h-12 rounded-full shadow-lg transition-all active:scale-95 border-amber-600/50">
                 <i id="weatherIcon" class="fa-solid fa-sun text-lg text-yellow-400"></i>
             </button>
-
-            <!-- Scriptures Book Button -->
-            <button id="btnScripture" class="ui-glass hover:bg-amber-900/80 text-amber-100 px-5 py-3 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-2 font-medium border-amber-500/60">
+            <button id="btnScripture" aria-label="불경" class="ui-glass hover:bg-amber-900/80 text-amber-100 px-3.5 md:px-5 h-11 md:h-12 rounded-full shadow-lg transition-all active:scale-95 flex items-center gap-2 font-medium border-amber-500/60">
                 <i class="fa-solid fa-book-open text-amber-300"></i>
-                <span class="hidden sm:inline">불경 법서(法書)</span>
+                <span class="hidden md:inline">불경 법서(法書)</span>
             </button>
-
-            <!-- Audio Settings Panel Toggle -->
-            <button id="btnAudio" class="ui-glass hover:bg-amber-950/80 text-amber-200 p-3.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 border-amber-600/50">
+            <button id="btnAudio" aria-label="소리 설정" class="ui-glass hover:bg-amber-950/80 text-amber-200 w-11 h-11 md:w-12 md:h-12 rounded-full shadow-lg transition-all active:scale-95 border-amber-600/50">
                 <i id="audioIcon" class="fa-solid fa-volume-high text-lg text-amber-400"></i>
             </button>
         </div>
     </header>
 
-    <!-- Bottom Controls HUD -->
-    <footer class="relative z-10 w-full p-4 md:p-6 flex justify-between items-end gap-4 pointer-events-none">
-        <div class="ui-glass px-5 py-3.5 rounded-2xl text-xs md:text-sm text-amber-100 shadow-2xl flex items-center gap-4 pointer-events-auto border-amber-700/50">
+    <!-- 데스크톱 하단 안내 -->
+    <footer class="desktop-only relative z-10 w-full p-4 md:p-6 flex justify-between items-end gap-4 pointer-events-none">
+        <div class="ui-glass px-5 py-3 rounded-2xl text-xs md:text-sm text-amber-100 shadow-2xl flex items-center gap-4 pointer-events-auto border-amber-700/50">
             <div class="flex items-center gap-1.5">
                 <span class="bg-amber-950/80 text-amber-300 border border-amber-600/60 px-2.5 py-1 rounded font-mono font-bold">W A S D</span>
-                <span class="text-amber-200">3D 이동</span>
+                <span class="text-amber-200">이동</span>
             </div>
             <div class="h-4 w-px bg-amber-700/60"></div>
             <div class="flex items-center gap-1.5">
                 <span class="bg-amber-950/80 text-amber-300 border border-amber-600/60 px-3 py-1 rounded font-mono font-bold">Space</span>
-                <span class="text-amber-200">불상 향해 절하기</span>
+                <span class="text-amber-200">절하기</span>
+            </div>
+            <div class="h-4 w-px bg-amber-700/60"></div>
+            <div class="flex items-center gap-1.5">
+                <span class="bg-amber-950/80 text-amber-300 border border-amber-600/60 px-2.5 py-1 rounded font-mono font-bold">마우스 드래그</span>
+                <span class="text-amber-200">시점</span>
             </div>
         </div>
-
-        <div class="ui-glass px-5 py-3.5 rounded-2xl text-amber-200 shadow-2xl pointer-events-auto flex items-center gap-3 border-amber-700/50">
-            <i class="fa-solid fa-hands-praying text-amber-400 text-xl"></i>
-            <span id="bowCountText">올린 절: <strong class="text-amber-300 font-bold text-lg">0</strong> 배</span>
-        </div>
+        <button id="btnSamDesktop" class="ui-glass px-5 py-3 rounded-2xl text-amber-200 shadow-2xl pointer-events-auto flex items-center gap-3 border-amber-600/60 hover:bg-amber-900/70 transition active:scale-95">
+            <i class="fa-solid fa-hands-praying text-amber-400 text-xl"></i> 삼배 올리기
+        </button>
     </footer>
 
-    <!-- AUDIO CONTROLS PANEL MODAL -->
-    <div id="audioPanel" class="hidden fixed top-24 right-6 z-30 ui-glass text-amber-100 p-6 rounded-2xl shadow-2xl w-80 border-amber-600/60">
+    <!-- 모바일 조작 -->
+    <div id="joyBase" class="touch-only"><div id="joyKnob"></div></div>
+    <button id="btnSamTouch" class="ui-glass touch-only" style="display:none">삼배(三拜)</button>
+    <button id="btnBowTouch" aria-label="절하기"><span style="font-size:30px">절</span><span style="font-size:11px;opacity:.8">탭하여</span></button>
+
+    <div id="toast" class="ui-glass"></div>
+
+    <!-- 소리 설정 -->
+    <div id="audioPanel" class="hidden fixed top-24 right-4 md:right-6 z-30 ui-glass text-amber-100 p-5 rounded-2xl shadow-2xl w-72 md:w-80 border-amber-600/60">
         <div class="flex justify-between items-center mb-4 border-b border-amber-800/50 pb-3">
-            <h3 class="font-bold text-amber-400 flex items-center gap-2">
-                <i class="fa-solid fa-music"></i> 수행 음향 설정
-            </h3>
+            <h3 class="font-bold text-amber-400 flex items-center gap-2"><i class="fa-solid fa-music"></i> 수행 음향 설정</h3>
             <button id="closeAudioPanel" class="text-stone-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
         </div>
         <div class="space-y-4 text-sm">
             <div>
-                <div class="flex justify-between text-xs mb-1.5">
-                    <span class="text-amber-200/90">목탁 소리 크기</span>
-                    <span id="moktakVolVal" class="text-amber-400 font-bold">70%</span>
-                </div>
+                <div class="flex justify-between text-xs mb-1.5"><span class="text-amber-200/90">목탁 · 경쇠 소리</span><span id="moktakVolVal" class="text-amber-400 font-bold">70%</span></div>
                 <input type="range" id="moktakVol" min="0" max="100" value="70" class="w-full accent-amber-500 cursor-pointer">
             </div>
+            <div>
+                <div class="flex justify-between text-xs mb-1.5"><span class="text-amber-200/90">빗소리(비 오는 날)</span><span id="ambVolVal" class="text-amber-400 font-bold">60%</span></div>
+                <input type="range" id="ambVol" min="0" max="100" value="60" class="w-full accent-amber-500 cursor-pointer">
+            </div>
             <div class="pt-3 border-t border-amber-900/50 flex flex-col gap-2">
-                <button id="btnManualMoktak" class="w-full py-2.5 bg-amber-900/70 hover:bg-amber-800 border border-amber-500/50 text-amber-100 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow">
-                    <i class="fa-solid fa-drum"></i> 직접 목탁 두드리기
-                </button>
-                <button id="btnBellChime" class="w-full py-2.5 bg-amber-950/70 hover:bg-amber-900 border border-amber-600/50 text-amber-200 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow">
-                    <i class="fa-solid fa-bell"></i> 은은한 경쇠 소리
-                </button>
+                <button id="btnManualMoktak" class="w-full py-2.5 bg-amber-900/70 hover:bg-amber-800 border border-amber-500/50 text-amber-100 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow"><i class="fa-solid fa-drum"></i> 목탁 두드리기</button>
+                <button id="btnBellChime" class="w-full py-2.5 bg-amber-950/70 hover:bg-amber-900 border border-amber-600/50 text-amber-200 rounded-xl text-xs flex items-center justify-center gap-2 transition shadow"><i class="fa-solid fa-bell"></i> 은은한 경쇠 소리</button>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPTURES SCRIPTURE MODAL -->
-    <div id="scriptureModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
-        <div class="relative w-full max-w-3xl max-h-[90vh] hanji-bg wood-border rounded-2xl p-6 md:p-10 flex flex-col justify-between shadow-2xl text-stone-900 transform scale-95 transition-transform duration-300">
-            <button id="closeScripture" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-stone-800 text-amber-100 flex items-center justify-center hover:bg-amber-900 transition shadow">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+    <!-- 불경 모달 -->
+    <div id="scriptureModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300" style="touch-action:auto">
+        <div class="relative w-full max-w-3xl max-h-[90vh] hanji-bg wood-border rounded-2xl p-5 md:p-10 flex flex-col justify-between shadow-2xl text-stone-900 transform scale-95 transition-transform duration-300">
+            <button id="closeScripture" class="absolute top-3 right-3 w-9 h-9 rounded-full bg-stone-800 text-amber-100 flex items-center justify-center hover:bg-amber-900 transition shadow"><i class="fa-solid fa-xmark"></i></button>
             <div class="text-center border-b-2 border-amber-900/20 pb-4 mb-4">
                 <span class="text-xs tracking-widest text-amber-900 uppercase font-semibold">대승불교의 지혜</span>
                 <h2 class="text-2xl md:text-3xl font-extrabold text-amber-950 mt-1 tracking-wide">마음 수행 불경 (法書)</h2>
             </div>
-            <div class="flex border-b border-amber-900/20 mb-4 overflow-x-auto gap-2 text-sm">
+            <div class="flex border-b border-amber-900/20 mb-4 overflow-x-auto gap-2 text-sm whitespace-nowrap">
                 <button class="scripture-tab px-4 py-2 font-bold border-b-2 border-amber-900 text-amber-950" data-tab="tab-hanya">반야심경(般若心經)</button>
                 <button class="scripture-tab px-4 py-2 text-stone-600 border-b-2 border-transparent hover:text-amber-900" data-tab="tab-terms">핵심 불교 사상</button>
                 <button class="scripture-tab px-4 py-2 text-stone-600 border-b-2 border-transparent hover:text-amber-900" data-tab="tab-quotes">선사들의 게송</button>
             </div>
-            <div class="overflow-y-auto max-h-[55vh] pr-2 leading-relaxed text-stone-800 text-sm md:text-base space-y-4">
+            <div class="overflow-y-auto max-h-[55vh] pr-2 leading-relaxed text-stone-800 text-sm md:text-base space-y-4" style="touch-action:pan-y">
                 <div id="tab-hanya" class="scripture-content space-y-4">
                     <div class="bg-amber-900/5 p-4 rounded-xl border border-amber-900/10">
                         <h3 class="font-bold text-amber-900 text-lg mb-2">마하반야바라밀다심경 (摩訶般若波羅蜜多心經)</h3>
@@ -167,683 +232,1060 @@
                         <div class="p-3 bg-white/70 rounded-lg text-stone-900 font-semibold my-2 border-l-4 border-amber-700">
                             "색불이공 공불이색 색즉시공 공즉시색 (色不異空 空不異色 色即是空 空即是色)"
                         </div>
-                        <p class="text-xs text-stone-600 mt-2">
-                            물질적인 형태가 본래 비어 있음과 다르지 않고, 비어 있음이 물질적인 형태와 다르지 아니하며, 물질이 곧 비어 있음이요 비어 있음이 곧 물질이니라.
-                        </p>
+                        <p class="text-xs text-stone-600 mt-2">물질적인 형태가 본래 비어 있음과 다르지 않고, 비어 있음이 물질적인 형태와 다르지 아니하며, 물질이 곧 비어 있음이요 비어 있음이 곧 물질이니라.</p>
                     </div>
                 </div>
                 <div id="tab-terms" class="scripture-content hidden space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10">
-                            <h4 class="font-bold text-amber-900 text-base mb-1">제행무상 (諸行無常)</h4>
-                            <p class="text-xs md:text-sm text-stone-700">세상의 모든 존재와 현상은 잠시도 고정되어 있지 않고 끊임없이 흘러갑니다.</p>
-                        </div>
-                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10">
-                            <h4 class="font-bold text-amber-900 text-base mb-1">연기법 (緣起法)</h4>
-                            <p class="text-xs md:text-sm text-stone-700">이것이 있으므로 저것이 있고, 이것이 생김으로 저것이 생겨납니다.</p>
-                        </div>
-                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10">
-                            <h4 class="font-bold text-amber-900 text-base mb-1">자비 (慈悲)</h4>
-                            <p class="text-xs md:text-sm text-stone-700">모든 생명에게 기쁨을 주고(慈), 괴로움을 거두어주는(悲) 맑은 마음입니다.</p>
-                        </div>
-                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10">
-                            <h4 class="font-bold text-amber-900 text-base mb-1">해탈 (解脫)</h4>
-                            <p class="text-xs md:text-sm text-stone-700">모든 번뇌와 집착의 굴레에서 벗어나 완전한 마음의 평온을 얻음입니다.</p>
-                        </div>
+                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10"><h4 class="font-bold text-amber-900 text-base mb-1">제행무상 (諸行無常)</h4><p class="text-xs md:text-sm text-stone-700">세상의 모든 존재와 현상은 잠시도 고정되어 있지 않고 끊임없이 흘러갑니다.</p></div>
+                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10"><h4 class="font-bold text-amber-900 text-base mb-1">연기법 (緣起法)</h4><p class="text-xs md:text-sm text-stone-700">이것이 있으므로 저것이 있고, 이것이 생김으로 저것이 생겨납니다.</p></div>
+                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10"><h4 class="font-bold text-amber-900 text-base mb-1">자비 (慈悲)</h4><p class="text-xs md:text-sm text-stone-700">모든 생명에게 기쁨을 주고(慈), 괴로움을 거두어주는(悲) 맑은 마음입니다.</p></div>
+                        <div class="bg-white/60 p-4 rounded-xl border border-amber-900/10"><h4 class="font-bold text-amber-900 text-base mb-1">해탈 (解脫)</h4><p class="text-xs md:text-sm text-stone-700">모든 번뇌와 집착의 굴레에서 벗어나 완전한 마음의 평온을 얻음입니다.</p></div>
                     </div>
                 </div>
                 <div id="tab-quotes" class="scripture-content hidden space-y-3">
-                    <blockquote class="p-4 bg-amber-900/5 rounded-xl border-l-4 border-amber-800 text-stone-800 italic">
-                        "마음이 일어나면 갖가지 법이 생겨나고, 마음이 사라지면 갖가지 법도 사라진다."
-                        <footer class="text-right not-italic text-xs text-amber-900 mt-1.5 font-bold">- 원효대사 (元曉大師)</footer>
-                    </blockquote>
-                    <blockquote class="p-4 bg-amber-900/5 rounded-xl border-l-4 border-amber-800 text-stone-800 italic">
-                        "산은 산이요, 물은 물이로다."
-                        <footer class="text-right not-italic text-xs text-amber-900 mt-1.5 font-bold">- 성철스님</footer>
-                    </blockquote>
+                    <blockquote class="p-4 bg-amber-900/5 rounded-xl border-l-4 border-amber-800 text-stone-800 italic">"마음이 일어나면 갖가지 법이 생겨나고, 마음이 사라지면 갖가지 법도 사라진다."<footer class="text-right not-italic text-xs text-amber-900 mt-1.5 font-bold">- 원효대사 (元曉大師)</footer></blockquote>
+                    <blockquote class="p-4 bg-amber-900/5 rounded-xl border-l-4 border-amber-800 text-stone-800 italic">"산은 산이요, 물은 물이로다."<footer class="text-right not-italic text-xs text-amber-900 mt-1.5 font-bold">- 성철스님</footer></blockquote>
                 </div>
             </div>
-            <div class="mt-4 pt-3 border-t border-amber-900/20 text-center text-xs text-stone-600 flex justify-between items-center">
+            <div class="mt-4 pt-3 border-t border-amber-900/20 text-center text-xs text-stone-600 flex justify-between items-center gap-2">
                 <span>두 손을 모아 합장하고 평온한 호흡을 하세요.</span>
-                <span class="font-bold text-amber-900">성불(成佛)하십시오 🙏</span>
+                <span class="font-bold text-amber-900 whitespace-nowrap">성불(成佛)하십시오 🙏</span>
             </div>
         </div>
     </div>
 
-    <!-- MAIN 3D APPLICATION LOGIC -->
-    <script>
-        // --- GLOBAL APP STATE ---
-        const state = {
-            scene: null,
-            camera: null,
-            renderer: null,
-            clock: new THREE.Clock(),
-            weather: 'clear', // clear, rain, night
-            weatherIndex: 0,
-            weathers: [
-                { id: 'clear', name: '화창한 산사의 낮', icon: 'fa-sun text-yellow-400' },
-                { id: 'rain', name: '고즈넉한 비 내리는 법당', icon: 'fa-cloud-showers-heavy text-blue-400' },
-                { id: 'night', name: '촛불 밝힌 운치있는 밤', icon: 'fa-moon text-amber-300' }
-            ],
-            bowCount: 0,
-            isBowing: false,
-            bowTimer: 0,
-            keys: { w: false, a: false, s: false, d: false },
-            audioCtx: null,
-            volumes: { moktak: 0.7 },
-            
-            // 3D Objects References
-            monkGroup: null,
-            monkParts: {},
-            candles: [],
-            smokeParticles: [],
-            rainSystem: null,
-            dirLight: null,
-            hemiLight: null,
-            statueAura: null,
-            bookDesk: null
-        };
+<script>
+/* =====================================================================
+   산사 3D — 법당 마음 수행
+   ===================================================================== */
+const isTouch = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+if (isTouch || window.innerWidth < 820) document.body.classList.add('touch');
 
-        // --- INITIALIZATION ---
-        window.addEventListener('load', () => {
-            init3DScene();
-            buildTempleEnvironment();
-            buildBuddhaStatue();
-            buildMonkCharacter();
-            buildInteractiveProps();
-            initWeatherSystems();
-            initUIAndEvents();
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const sm = (a, b, t) => { const x = clamp((t - a) / (b - a), 0, 1); return x * x * (3 - 2 * x); };
+const rand = (a, b) => a + Math.random() * (b - a);
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const lerpAngle = (a, b, k) => { const d = ((b - a + Math.PI) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2) - Math.PI; return a + d * k; };
 
-            // Start Main 3D Render Loop
-            animate();
+/* ---------------- 날씨 정의 ---------------- */
+const WX = [
+    { id: 'clear', name: '화창한 산사의 낮', icon: 'fa-sun text-yellow-400',
+      bg: 0xcfe4f5, fog: 0xe9dcc0, fogD: 0.010, hemiSky: 0xfff2d8, hemiGnd: 0x6a4528, hemi: 0.85, dir: 1.25, dirCol: 0xfff0cf,
+      paper: 1.0, paperCol: 0xfff0c8, lantern: 0.5, glow: 0.22, candle: 0.9, exp: 1.0, shafts: 0.13, rain: 0 },
+    { id: 'rain', name: '고즈넉한 비 내리는 법당', icon: 'fa-cloud-showers-heavy text-blue-400',
+      bg: 0x5a6a7c, fog: 0x4a5868, fogD: 0.016, hemiSky: 0xbccbe0, hemiGnd: 0x3a2a20, hemi: 0.58, dir: 0.38, dirCol: 0xa8bcd8,
+      paper: 0.5, paperCol: 0xbfcce0, lantern: 0.85, glow: 0.35, candle: 1.1, exp: 0.98, shafts: 0, rain: 1 },
+    { id: 'night', name: '촛불 밝힌 운치있는 밤', icon: 'fa-moon text-amber-300',
+      bg: 0x0b1226, fog: 0x141a33, fogD: 0.016, hemiSky: 0x3a4a80, hemiGnd: 0x1a1008, hemi: 0.3, dir: 0.14, dirCol: 0x8c9cff,
+      paper: 0.12, paperCol: 0x2a3a6e, lantern: 1.7, glow: 0.7, candle: 1.7, exp: 1.18, shafts: 0, rain: 0 }
+];
+
+const S = {
+    scene: null, camera: null, renderer: null, clock: new THREE.Clock(),
+    weatherIndex: 0, keys: {}, joy: { x: 0, y: 0 }, audio: null, vol: { moktak: 0.7, amb: 0.6 },
+    bowCount: 0, bow: { active: false, t: 0, queue: 0, flags: {}, slide: false, sam: false },
+    mp: { kneel: 0, pitch: 0, hand: 0 }, walk: { phase: 0, amt: 0 }, surf: 0,
+    cam: { yaw: 0, el: 0.36, dist: 5.8 }, camTarget: new THREE.Vector3(0, 2, -2),
+    paperMats: [], lanternMats: [], glows: [], candleLights: [], flames: [], smoke: [], pickables: [],
+    rainTex: [], rainMats: [], shafts: [], pillars: [], cur: null, tgt: null, entered: false
+};
+
+/* ---------------- 공용 헬퍼 ---------------- */
+function tex(w, h, draw, rep) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    const g = c.getContext('2d'); draw(g, w, h);
+    const t = new THREE.CanvasTexture(c);
+    t.anisotropy = S.renderer ? Math.min(8, S.renderer.capabilities.getMaxAnisotropy()) : 4;
+    if (rep) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rep[0], rep[1]); }
+    return t;
+}
+function M(color, rough = 0.7, metal = 0, env = 0.25, extra = {}) {
+    const m = new THREE.MeshStandardMaterial(Object.assign({ color, roughness: rough, metalness: metal }, extra));
+    m.envMapIntensity = env; return m;
+}
+const SG = new THREE.SphereGeometry(1, 24, 16);
+function ell(mat, sx, sy, sz, x, y, z, parent, shadow = true) {
+    const m = new THREE.Mesh(SG, mat); m.scale.set(sx, sy, sz); m.position.set(x, y, z);
+    m.castShadow = shadow; if (parent) parent.add(m); return m;
+}
+function box(w, h, d, mat, x, y, z, parent, shadow = false, receive = true) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z);
+    m.castShadow = shadow; m.receiveShadow = receive; if (parent) parent.add(m); return m;
+}
+function cyl(rt, rb, h, mat, x, y, z, parent, seg = 16, shadow = false) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat); m.position.set(x, y, z);
+    m.castShadow = shadow; if (parent) parent.add(m); return m;
+}
+function latheGeo(points, seg, sx = 1, sz = 1, phiStart = 0, phiLen = Math.PI * 2) {
+    const g = new THREE.LatheGeometry(points.map(p => new THREE.Vector2(p[0], p[1])), seg, phiStart, phiLen);
+    g.scale(sx, 1, sz); g.computeVertexNormals(); return g;
+}
+function wrinkle(g, amp, freq, yf = 2.0) {
+    const p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+        const x = p.getX(i), z = p.getZ(i); const a = Math.atan2(x, z);
+        const f = 1 + amp * Math.sin(a * freq + p.getY(i) * yf);
+        p.setX(i, x * f); p.setZ(i, z * f);
+    }
+    g.computeVertexNormals();
+}
+function makeLimb(rEnd, rStart, mat) {
+    const g = new THREE.CylinderGeometry(rEnd, rStart, 1, 12); g.translate(0, 0.5, 0);
+    const m = new THREE.Mesh(g, mat); m.castShadow = true; return m;
+}
+const UP = new THREE.Vector3(0, 1, 0);
+const _d = new THREE.Vector3();
+function setLimb(mesh, a, b) {
+    mesh.position.copy(a); _d.subVectors(b, a); const len = Math.max(_d.length(), 0.0001);
+    mesh.scale.set(1, len, 1); mesh.quaternion.setFromUnitVectors(UP, _d.multiplyScalar(1 / len));
+}
+function glowSprite(color, size, opacity, x, y, z, parent) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: S.glowTex, color, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending }));
+    s.scale.set(size, size, 1); s.position.set(x, y, z); if (parent) parent.add(s); return s;
+}
+
+/* ---------------- 텍스처 ---------------- */
+function makeTextures() {
+    S.glowTex = tex(128, 128, (g, w, h) => {
+        const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+        gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    });
+    S.smokeTex = tex(128, 128, (g, w, h) => {
+        const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+        gr.addColorStop(0, 'rgba(235,235,240,.9)'); gr.addColorStop(0.5, 'rgba(220,220,230,.35)'); gr.addColorStop(1, 'rgba(220,220,230,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    });
+    S.woodTex = tex(1024, 1024, (g, w, h) => {
+        const n = 10, pw = w / n;
+        for (let i = 0; i < n; i++) {
+            g.fillStyle = `hsl(26,${52 + Math.random() * 12}%,${34 + Math.random() * 9}%)`; g.fillRect(i * pw, 0, pw, h);
+            for (let k = 0; k < 46; k++) {
+                g.strokeStyle = `rgba(50,24,8,${Math.random() * 0.28})`; g.lineWidth = Math.random() * 1.6 + 0.3;
+                const x = i * pw + Math.random() * pw; g.beginPath(); g.moveTo(x, 0);
+                g.bezierCurveTo(x + rand(-6, 6), h * 0.3, x + rand(-6, 6), h * 0.6, x + rand(-4, 4), h); g.stroke();
+            }
+            g.fillStyle = 'rgba(25,12,4,.6)'; g.fillRect(i * pw, 0, 2.5, h);
+            g.fillRect(i * pw, Math.random() * h, pw, 2.5);
+        }
+    }, [3, 3.2]);
+    S.carpetTex = tex(256, 256, (g, w, h) => {
+        g.fillStyle = '#8e1b1b'; g.fillRect(0, 0, w, h);
+        g.strokeStyle = '#e8b923'; g.lineWidth = 6; g.strokeRect(8, 0, w - 16, h);
+        g.strokeStyle = 'rgba(232,185,35,.5)'; g.lineWidth = 2; g.strokeRect(22, -2, w - 44, h + 4);
+        for (let y = 30; y < h; y += 128) {
+            for (let p = 0; p < 8; p++) {
+                const a = p * Math.PI / 4; g.fillStyle = p % 2 ? '#f4efe1' : '#e8b923';
+                g.beginPath(); g.ellipse(w / 2 + Math.cos(a) * 24, y + 30 + Math.sin(a) * 24, 12, 6, a, 0, 7); g.fill();
+            }
+            g.fillStyle = '#b8860b'; g.beginPath(); g.arc(w / 2, y + 30, 9, 0, 7); g.fill();
+        }
+    }, [1, 5]);
+    S.cushionTex = tex(256, 256, (g, w, h) => {
+        g.fillStyle = '#a31d1d'; g.fillRect(0, 0, w, h);
+        g.strokeStyle = '#e8b923'; g.lineWidth = 8; g.strokeRect(10, 10, w - 20, h - 20);
+        for (let p = 0; p < 12; p++) {
+            const a = p * Math.PI / 6; g.fillStyle = p % 2 ? '#f4efe1' : '#e8b923';
+            g.beginPath(); g.ellipse(w / 2 + Math.cos(a) * 50, h / 2 + Math.sin(a) * 50, 26, 12, a, 0, 7); g.fill();
+        }
+        g.fillStyle = '#7a1212'; g.beginPath(); g.arc(w / 2, h / 2, 22, 0, 7); g.fill();
+        g.fillStyle = '#e8b923'; g.beginPath(); g.arc(w / 2, h / 2, 10, 0, 7); g.fill();
+    });
+    S.ceilTex = tex(512, 512, (g, w, h) => {
+        g.fillStyle = '#17604a'; g.fillRect(0, 0, w, h);
+        g.strokeStyle = '#e8b923'; g.lineWidth = 6; g.strokeRect(6, 6, w - 12, h - 12);
+        g.strokeStyle = '#8a1c14'; g.lineWidth = 12; g.strokeRect(24, 24, w - 48, h - 48);
+        for (let p = 0; p < 12; p++) {
+            const a = p * Math.PI / 6;
+            g.fillStyle = ['#e8b923', '#d94b4b', '#f4efe1'][p % 3];
+            g.beginPath(); g.ellipse(w / 2 + Math.cos(a) * 80, h / 2 + Math.sin(a) * 80, 40, 17, a, 0, 7); g.fill();
+        }
+        g.fillStyle = '#2457a6'; g.beginPath(); g.arc(w / 2, h / 2, 46, 0, 7); g.fill();
+        g.fillStyle = '#e8b923'; g.beginPath(); g.arc(w / 2, h / 2, 24, 0, 7); g.fill();
+    }, [4, 4.4]);
+    S.paperTex = tex(256, 512, (g, w, h) => {
+        g.fillStyle = '#f4e8c8'; g.fillRect(0, 0, w, h);
+        for (let i = 0; i < 500; i++) { g.fillStyle = `rgba(150,110,60,${Math.random() * 0.05})`; g.fillRect(Math.random() * w, Math.random() * h, 3, 3); }
+        g.strokeStyle = '#4a2a14'; g.lineWidth = 5;
+        const n = 5;
+        for (let i = -n * 2; i <= n * 2; i++) {
+            g.beginPath(); g.moveTo(i * (w / n), 0); g.lineTo(i * (w / n) + h * 0.5, h); g.stroke();
+            g.beginPath(); g.moveTo(i * (w / n), 0); g.lineTo(i * (w / n) - h * 0.5, h); g.stroke();
+        }
+        g.lineWidth = 12; g.strokeStyle = '#3b2010'; g.strokeRect(2, 2, w - 4, h - 4);
+        g.lineWidth = 6; g.beginPath(); g.moveTo(0, h * 0.5); g.lineTo(w, h * 0.5); g.stroke();
+    });
+    S.gasaTex = tex(256, 128, (g, w, h) => {
+        g.fillStyle = '#7a1f12'; g.fillRect(0, 0, w, h);
+        const cols = ['#8a2515', '#6e1a10', '#7f2a16', '#963419'], cw = w / 4, ch = h / 2;
+        for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) {
+            g.fillStyle = cols[(i + j * 2) % 4]; g.fillRect(i * cw + 3, j * ch + 3, cw - 6, ch - 6);
+            g.strokeStyle = '#d9a82b'; g.lineWidth = 3; g.strokeRect(i * cw + 1.5, j * ch + 1.5, cw - 3, ch - 3);
+        }
+    }, [3, 2]);
+    // 비 줄기
+    for (let k = 0; k < 2; k++) {
+        const t = tex(256, 512, (g, w, h) => {
+            for (let i = 0; i < 110; i++) {
+                const x = Math.random() * w, y = Math.random() * h, l = 30 + Math.random() * 60;
+                g.strokeStyle = `rgba(255,255,255,${0.2 + Math.random() * 0.5})`; g.lineWidth = 1 + Math.random() * 1.6;
+                g.beginPath(); g.moveTo(x, y); g.lineTo(x - l * 0.12, y + l); g.stroke();
+            }
+        }, [3, 1]);
+        S.rainTex.push(t);
+    }
+}
+function dancheong(rep) {
+    return tex(512, 128, (g, w, h) => {
+        g.fillStyle = '#9b1c1c'; g.fillRect(0, 0, w, h);
+        const band = (y, hh, c) => { g.fillStyle = c; g.fillRect(0, y, w, hh); };
+        band(0, h * 0.2, '#1f7a5a'); band(h * 0.8, h * 0.2, '#1f7a5a');
+        band(h * 0.2, h * 0.08, '#f4efe1'); band(h * 0.72, h * 0.08, '#f4efe1');
+        band(h * 0.28, h * 0.06, '#2457a6'); band(h * 0.66, h * 0.06, '#2457a6');
+        for (let x = 64; x < w; x += 128) {
+            const cy = h / 2;
+            g.fillStyle = '#e8b923'; g.beginPath(); g.arc(x, cy, 27, 0, 7); g.fill();
+            for (let p = 0; p < 8; p++) {
+                const a = p * Math.PI / 4; g.fillStyle = p % 2 ? '#2457a6' : '#1f7a5a';
+                g.beginPath(); g.ellipse(x + Math.cos(a) * 18, cy + Math.sin(a) * 18, 8, 5, a, 0, 7); g.fill();
+            }
+            g.fillStyle = '#9b1c1c'; g.beginPath(); g.arc(x, cy, 9, 0, 7); g.fill();
+            g.fillStyle = '#f4efe1'; g.beginPath(); g.arc(x, cy, 4, 0, 7); g.fill();
+        }
+    }, rep);
+}
+function makePaintTex() {
+    return tex(1024, 840, (g, w, h) => {
+        const bg = g.createLinearGradient(0, 0, 0, h);
+        bg.addColorStop(0, '#1d3f57'); bg.addColorStop(0.55, '#24473a'); bg.addColorStop(1, '#5a1f14');
+        g.fillStyle = bg; g.fillRect(0, 0, w, h);
+        for (let i = 0; i < 34; i++) {
+            g.strokeStyle = `rgba(235,220,170,${0.1 + Math.random() * 0.15})`; g.lineWidth = 3;
+            const x = Math.random() * w, y = Math.random() * h; g.beginPath();
+            g.arc(x, y, 18 + Math.random() * 26, Math.PI * 0.9, Math.PI * 2.1); g.arc(x + 40, y, 26, Math.PI, Math.PI * 2); g.stroke();
+        }
+        const cx = w / 2, cy = h * 0.46;
+        for (let i = 0; i < 72; i++) {
+            const a = i / 72 * Math.PI * 2; g.fillStyle = `rgba(255,214,120,${i % 2 ? 0.14 : 0.07})`;
+            g.beginPath(); g.moveTo(cx, cy);
+            g.lineTo(cx + Math.cos(a - 0.03) * 900, cy + Math.sin(a - 0.03) * 900);
+            g.lineTo(cx + Math.cos(a + 0.03) * 900, cy + Math.sin(a + 0.03) * 900); g.closePath(); g.fill();
+        }
+        [[320, 'rgba(255,225,140,.16)'], [250, 'rgba(255,200,90,.24)'], [190, 'rgba(255,240,180,.3)']].forEach(([r, c]) => {
+            g.fillStyle = c; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
+            g.strokeStyle = 'rgba(240,192,64,.7)'; g.lineWidth = 3; g.stroke();
         });
-
-        // --- THREE.JS SCENE SETUP ---
-        function init3DScene() {
-            const container = document.getElementById('canvasContainer');
-            state.scene = new THREE.Scene();
-            state.scene.background = new THREE.Color(0xfef08a);
-            state.scene.fog = new THREE.FogExp2(0xdfe7f1, 0.025);
-
-            state.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-            state.camera.position.set(0, 3.8, 8.5);
-            state.camera.lookAt(0, 2.0, 0);
-
-            state.renderer = new THREE.WebGLRenderer({ antialias: true });
-            state.renderer.setSize(window.innerWidth, window.innerHeight);
-            state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            state.renderer.shadowMap.enabled = true;
-            state.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            state.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            state.renderer.toneMappingExposure = 1.1;
-
-            container.appendChild(state.renderer.domElement);
-
-            // Lighting Setup
-            state.hemiLight = new THREE.HemisphereLight(0xfffbeb, 0x451a03, 0.9);
-            state.scene.add(state.hemiLight);
-
-            state.dirLight = new THREE.DirectionalLight(0xfff5d6, 1.4);
-            state.dirLight.position.set(6, 12, 8);
-            state.dirLight.castShadow = true;
-            state.dirLight.shadow.mapSize.width = 2048;
-            state.dirLight.shadow.mapSize.height = 2048;
-            state.dirLight.shadow.camera.near = 0.5;
-            state.dirLight.shadow.camera.far = 25;
-            state.dirLight.shadow.camera.left = -8;
-            state.dirLight.shadow.camera.right = 8;
-            state.dirLight.shadow.camera.top = 8;
-            state.dirLight.shadow.camera.bottom = -8;
-            state.scene.add(state.dirLight);
-
-            window.addEventListener('resize', onWindowResize);
+        const fig = (x, y, s, col) => {
+            g.fillStyle = 'rgba(255,222,130,.35)'; g.beginPath(); g.arc(x, y - s * 0.9, s * 0.75, 0, 7); g.fill();
+            g.strokeStyle = '#f0c040'; g.lineWidth = 2; g.stroke();
+            g.fillStyle = '#e8c9a0'; g.beginPath(); g.arc(x, y - s * 0.9, s * 0.28, 0, 7); g.fill();
+            g.fillStyle = col; g.beginPath(); g.moveTo(x - s * 0.7, y + s * 0.6); g.quadraticCurveTo(x, y - s * 0.6, x + s * 0.7, y + s * 0.6); g.closePath(); g.fill();
+            g.fillStyle = '#f0c040'; g.beginPath(); g.ellipse(x, y + s * 0.62, s * 0.8, s * 0.18, 0, 0, 7); g.fill();
+        };
+        const cols = ['#b3261e', '#2457a6', '#1f7a5a', '#d98a1c', '#7a3a8a'];
+        for (let i = 0; i < 4; i++) {
+            fig(110 + i * 62, 250 + i * 95, 38 - i * 2, cols[i % 5]); fig(w - 110 - i * 62, 250 + i * 95, 38 - i * 2, cols[(i + 2) % 5]);
         }
-
-        function onWindowResize() {
-            state.camera.aspect = window.innerWidth / window.innerHeight;
-            state.camera.updateProjectionMatrix();
-            state.renderer.setSize(window.innerWidth, window.innerHeight);
+        for (let i = 0; i < 3; i++) { fig(300 + i * 40, 120 + i * 10, 30, cols[(i + 1) % 5]); fig(w - 300 - i * 40, 120 + i * 10, 30, cols[(i + 3) % 5]); }
+        for (let r = 0; r < 3; r++) for (let p = 0; p < 18; p++) {
+            const a = p / 18 * Math.PI * 2 + r * 0.1; g.fillStyle = ['#f0c040', '#e8708a', '#f4efe1'][r];
+            g.beginPath(); g.ellipse(cx + Math.cos(a) * (90 + r * 36), h - 70 + Math.sin(a) * (22 + r * 9), 20, 9, a, 0, 7); g.fill();
         }
-
-        // --- PROCEDURAL 3D TEMPLE ENVIRONMENT ---
-        function buildTempleEnvironment() {
-            const scene = state.scene;
-
-            // Wooden Floor
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x6e3c1b, roughness: 0.4, metalness: 0.1 });
-            const floor = new THREE.Mesh(new THREE.BoxGeometry(14, 0.3, 12), floorMat);
-            floor.position.set(0, -0.15, 0);
-            floor.receiveShadow = true;
-            scene.add(floor);
-
-            // Red Worship Runner Carpet
-            const carpetMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.7 });
-            const carpet = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.02, 9), carpetMat);
-            carpet.position.set(0, 0.01, 0.5);
-            carpet.receiveShadow = true;
-            scene.add(carpet);
-
-            // Worship Mat Cushion (방석)
-            const cushionMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.5 });
-            const cushion = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.15, 1.4), cushionMat);
-            cushion.position.set(0, 0.08, 1.8);
-            cushion.receiveShadow = true;
-            cushion.castShadow = true;
-            scene.add(cushion);
-
-            // Gold Trim on Cushion
-            const borderMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3, metalness: 0.6 });
-            const border = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.08, 1.45), borderMat);
-            border.position.set(0, 0.06, 1.8);
-            scene.add(border);
-
-            // Temple Pillars
-            const pillarMat = new THREE.MeshStandardMaterial({ color: 0x3d1e10, roughness: 0.6 });
-            const pillarGeo = new THREE.CylinderGeometry(0.35, 0.35, 6, 16);
-
-            [[-5.5, 3], [5.5, 3], [-5.5, -3], [5.5, -3]].forEach(pos => {
-                const pillar = new THREE.Mesh(pillarGeo, pillarMat);
-                pillar.position.set(pos[0], 2.8, pos[1]);
-                pillar.castShadow = true;
-                pillar.receiveShadow = true;
-                scene.add(pillar);
-            });
-
-            // Back Wooden Wall & Scroll Hanging
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0x452210, roughness: 0.7 });
-            const backWall = new THREE.Mesh(new THREE.BoxGeometry(14, 6, 0.3), wallMat);
-            backWall.position.set(0, 2.8, -4.5);
-            backWall.receiveShadow = true;
-            scene.add(backWall);
-
-            // Hanging Scroll (족자)
-            const scrollMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.9 });
-            const scroll = new THREE.Mesh(new THREE.PlaneGeometry(2.0, 3.8), scrollMat);
-            scroll.position.set(0, 3.2, -4.32);
-            scene.add(scroll);
-
-            // Scroll Wooden Holders
-            const holderMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.3 });
-            const holderGeo = new THREE.CylinderGeometry(0.06, 0.06, 2.2, 12);
-            
-            const topHolder = new THREE.Mesh(holderGeo, holderMat);
-            topHolder.rotation.z = Math.PI / 2;
-            topHolder.position.set(0, 5.1, -4.3);
-            scene.add(topHolder);
-
-            const botHolder = topHolder.clone();
-            botHolder.position.set(0, 1.3, -4.3);
-            scene.add(botHolder);
+        g.strokeStyle = '#e8b923'; g.lineWidth = 14; g.strokeRect(7, 7, w - 14, h - 14);
+        g.strokeStyle = '#8a1c14'; g.lineWidth = 6; g.strokeRect(20, 20, w - 40, h - 40);
+    });
+}
+function makeHaloTex() {
+    return tex(512, 512, (g, w, h) => {
+        const cx = w / 2, cy = h / 2;
+        const gr = g.createRadialGradient(cx, cy, 10, cx, cy, w * 0.46);
+        gr.addColorStop(0, 'rgba(255,248,210,.95)'); gr.addColorStop(0.7, 'rgba(255,214,110,.75)'); gr.addColorStop(1, 'rgba(240,170,40,.55)');
+        g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, w * 0.46, 0, 7); g.fill();
+        g.strokeStyle = 'rgba(190,120,20,.85)'; g.lineWidth = 4;
+        [0.4, 0.3, 0.2].forEach(r => { g.beginPath(); g.arc(cx, cy, w * r, 0, 7); g.stroke(); });
+        for (let i = 0; i < 24; i++) {
+            const a = i / 24 * Math.PI * 2; g.fillStyle = 'rgba(210,140,30,.7)'; g.beginPath();
+            g.ellipse(cx + Math.cos(a) * w * 0.35, cy + Math.sin(a) * w * 0.35, 26, 8, a, 0, 7); g.fill();
         }
-
-        // --- DETAILED 3D GOLDEN BUDDHA STATUE ---
-        function buildBuddhaStatue() {
-            const scene = state.scene;
-            const buddhaGroup = new THREE.Group();
-            buddhaGroup.position.set(0, 1.1, -3.2);
-
-            // Altar Table
-            const altarMat = new THREE.MeshStandardMaterial({ color: 0x271309, roughness: 0.4 });
-            const altar = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.0, 1.8), altarMat);
-            altar.position.set(0, -0.5, 0);
-            altar.castShadow = true;
-            altar.receiveShadow = true;
-            buddhaGroup.add(altar);
-
-            // Lotus Pedestal
-            const goldMat = new THREE.MeshStandardMaterial({
-                color: 0xfacc15,
-                metalness: 0.85,
-                roughness: 0.25,
-                envMapIntensity: 1.2
-            });
-
-            const lotusBase = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.35, 16), goldMat);
-            lotusBase.position.y = 0.15;
-            lotusBase.castShadow = true;
-            buddhaGroup.add(lotusBase);
-
-            // Buddha Legs (Crossed Lotus Pose)
-            const legs = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.28, 12, 24), goldMat);
-            legs.rotation.x = Math.PI / 2;
-            legs.position.y = 0.45;
-            legs.castShadow = true;
-            buddhaGroup.add(legs);
-
-            // Torso
-            const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.65, 1.1, 16), goldMat);
-            torso.position.y = 1.05;
-            torso.castShadow = true;
-            buddhaGroup.add(torso);
-
-            // Head
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20, 20), goldMat);
-            head.position.y = 1.85;
-            head.castShadow = true;
-            buddhaGroup.add(head);
-
-            // Topknot (Ushnisha)
-            const topknot = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), goldMat);
-            topknot.position.y = 2.28;
-            buddhaGroup.add(topknot);
-
-            // Halo / Aura Disk
-            const auraGeo = new THREE.RingGeometry(0.2, 1.3, 32);
-            const auraMat = new THREE.MeshBasicMaterial({
-                color: 0xfef08a,
-                side: THREE.DoubleSide,
-                transparent: true,
-                opacity: 0.8
-            });
-            state.statueAura = new THREE.Mesh(auraGeo, auraMat);
-            state.statueAura.position.set(0, 1.85, -0.2);
-            buddhaGroup.add(state.statueAura);
-
-            // Warm Light for Buddha Statue
-            const statueLight = new THREE.PointLight(0xfef08a, 1.2, 6);
-            statueLight.position.set(0, 2.0, 0.8);
-            buddhaGroup.add(statueLight);
-
-            scene.add(buddhaGroup);
+        for (let i = 0; i < 48; i++) {
+            const a = i / 48 * Math.PI * 2; g.fillStyle = 'rgba(255,230,150,.9)'; g.beginPath();
+            g.moveTo(cx + Math.cos(a - 0.05) * w * 0.455, cy + Math.sin(a - 0.05) * w * 0.455);
+            g.lineTo(cx + Math.cos(a) * w * 0.5, cy + Math.sin(a) * w * 0.5);
+            g.lineTo(cx + Math.cos(a + 0.05) * w * 0.455, cy + Math.sin(a + 0.05) * w * 0.455); g.fill();
         }
-
-        // --- 3D MONK CHARACTER (PROPOSED HIGH QUALITY) ---
-        function buildMonkCharacter() {
-            state.monkGroup = new THREE.Group();
-            state.monkGroup.position.set(0, 0, 1.8);
-
-            const skinMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.6 });
-            const grayRobeMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.7 });
-            const saffronSashMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.6 });
-
-            // Body Robe (승복)
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.45, 1.1, 16), grayRobeMat);
-            body.position.y = 0.65;
-            body.castShadow = true;
-            state.monkGroup.add(body);
-
-            // Saffron Sash (가사)
-            const sash = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 0.8, 16, 1, false, 0, Math.PI * 1.2), saffronSashMat);
-            sash.position.y = 0.75;
-            sash.rotation.y = -0.4;
-            state.monkGroup.add(sash);
-
-            // Head (스님 두상)
-            const head = new THREE.Mesh(new THREE.SphereGeometry(0.26, 20, 20), skinMat);
-            head.position.y = 1.38;
-            head.castShadow = true;
-            state.monkGroup.add(head);
-            state.monkParts.head = head;
-
-            // Joined Prayer Hands (합장)
-            const handsGroup = new THREE.Group();
-            handsGroup.position.set(0, 0.8, 0.32);
-
-            const handL = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 0.08), skinMat);
-            handL.position.x = -0.04;
-            handL.rotation.z = -0.2;
-            const handR = handL.clone();
-            handR.position.x = 0.04;
-            handR.rotation.z = 0.2;
-
-            handsGroup.add(handL);
-            handsGroup.add(handR);
-            state.monkGroup.add(handsGroup);
-            state.monkParts.hands = handsGroup;
-
-            state.scene.add(state.monkGroup);
-        }
-
-        // --- INTERACTIVE CANDLES, INCENSE & BOOK DESK ---
-        function buildInteractiveProps() {
-            const scene = state.scene;
-
-            // Incense Burner & Smoke Particles
-            const burnerMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.3, metalness: 0.8 });
-            const burner = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.22, 16), burnerMat);
-            burner.position.set(0, 0.72, -2.5);
-            scene.add(burner);
-
-            // Smoke Particle System
-            const smokeGeo = new THREE.BufferGeometry();
-            const count = 40;
-            const posArray = new Float32Array(count * 3);
-
-            for (let i = 0; i < count * 3; i += 3) {
-                posArray[i] = (Math.random() - 0.5) * 0.1;
-                posArray[i + 1] = 0.8 + Math.random() * 0.8;
-                posArray[i + 2] = -2.5 + (Math.random() - 0.5) * 0.1;
+    });
+}
+function makeAuraTex() {
+    return tex(512, 640, (g, w, h) => {
+        const cx = w / 2, cy = h * 0.5;
+        const path = (k) => {
+            g.beginPath();
+            for (let i = 0; i <= 120; i++) {
+                const t = i / 120 * Math.PI * 2; const rx = w * 0.42 * k, ry = h * 0.46 * k;
+                const px = cx + Math.sin(t) * rx * (1 - 0.18 * Math.cos(t) * Math.cos(t));
+                const py = cy - Math.cos(t) * ry;
+                i ? g.lineTo(px, py) : g.moveTo(px, py);
             }
-            smokeGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-
-            const smokeMat = new THREE.PointsMaterial({
-                size: 0.08,
-                color: 0xe2e8f0,
-                transparent: true,
-                opacity: 0.4
-            });
-            const smoke = new THREE.Points(smokeGeo, smokeMat);
-            scene.add(smoke);
-            state.smokeParticles = smoke;
-
-            // Candles on Altar Left and Right
-            [-1.5, 1.5].forEach(x => {
-                const candleMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
-                const candle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.4, 12), candleMat);
-                candle.position.set(x, 0.8, -2.6);
-                scene.add(candle);
-
-                // Flame PointLight
-                const flameLight = new THREE.PointLight(0xf97316, 0.8, 3);
-                flameLight.position.set(x, 1.05, -2.6);
-                scene.add(flameLight);
-
-                state.candles.push(flameLight);
-            });
-
-            // Scripture Desk on Right Side
-            const deskMat = new THREE.MeshStandardMaterial({ color: 0x3d1e10, roughness: 0.5 });
-            state.bookDesk = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 0.8), deskMat);
-            state.bookDesk.position.set(3.8, 0.25, 1.8);
-            state.bookDesk.castShadow = true;
-            state.bookDesk.receiveShadow = true;
-            scene.add(state.bookDesk);
-
-            // Book on Desk
-            const bookMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.8 });
-            const book = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.35), bookMat);
-            book.position.set(3.8, 0.54, 1.8);
-            scene.add(book);
+            g.closePath();
+        };
+        const gr = g.createRadialGradient(cx, cy, 20, cx, cy, h * 0.5);
+        gr.addColorStop(0, 'rgba(255,245,200,.85)'); gr.addColorStop(1, 'rgba(240,170,40,.45)');
+        g.fillStyle = gr; path(1); g.fill();
+        g.strokeStyle = 'rgba(190,120,20,.9)'; g.lineWidth = 5; path(1); g.stroke(); path(0.82); g.stroke(); path(0.64); g.stroke();
+        for (let i = 0; i < 64; i++) {
+            const t = i / 64 * Math.PI * 2; const rx = w * 0.42, ry = h * 0.46;
+            const px = cx + Math.sin(t) * rx * (1 - 0.18 * Math.cos(t) * Math.cos(t)), py = cy - Math.cos(t) * ry;
+            const nx = Math.sin(t), ny = -Math.cos(t);
+            g.fillStyle = 'rgba(255,225,130,.95)'; g.beginPath();
+            g.moveTo(px - ny * 8, py + nx * 8); g.lineTo(px + nx * 26, py + ny * 26); g.lineTo(px + ny * 8, py - nx * 8); g.fill();
         }
+    });
+}
+function makeEnv() {
+    const pm = new THREE.PMREMGenerator(S.renderer);
+    const es = new THREE.Scene();
+    const t = tex(1024, 512, (g, w, h) => {
+        const gr = g.createLinearGradient(0, 0, 0, h);
+        gr.addColorStop(0, '#fff1cc'); gr.addColorStop(0.45, '#b98a52'); gr.addColorStop(0.6, '#5a3a1e'); gr.addColorStop(1, '#1c0f06');
+        g.fillStyle = gr; g.fillRect(0, 0, w, h);
+        g.fillStyle = '#ffffff'; g.globalAlpha = 0.9;
+        for (let i = 0; i < 10; i++) g.fillRect(i * 102 + 20, 170, 50, 110);
+        g.globalAlpha = 1;
+    });
+    es.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), new THREE.MeshBasicMaterial({ map: t, side: THREE.BackSide })));
+    const rt = pm.fromScene(es, 0.03); S.scene.environment = rt.texture; pm.dispose();
+}
 
-        // --- WEATHER & RAIN PARTICLE SYSTEM ---
-        function initWeatherSystems() {
-            const rainCount = 600;
-            const rainGeo = new THREE.BufferGeometry();
-            const rainPos = new Float32Array(rainCount * 3);
+/* ---------------- 장면 초기화 ---------------- */
+function init3D() {
+    const container = $('canvasContainer');
+    S.scene = new THREE.Scene();
+    S.scene.background = new THREE.Color(0xcfe4f5);
+    S.scene.fog = new THREE.FogExp2(0xe9dcc0, 0.010);
 
-            for (let i = 0; i < rainCount * 3; i += 3) {
-                rainPos[i] = (Math.random() - 0.5) * 20;
-                rainPos[i + 1] = Math.random() * 12;
-                rainPos[i + 2] = (Math.random() - 0.5) * 20;
+    S.camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 80);
+    S.camera.position.set(0, 3.2, 7.0);
+
+    S.renderer = new THREE.WebGLRenderer({ antialias: !isTouch, powerPreference: 'high-performance' });
+    S.renderer.setSize(window.innerWidth, window.innerHeight);
+    S.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isTouch ? 1.6 : 2));
+    S.renderer.shadowMap.enabled = true;
+    S.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    S.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    S.renderer.toneMappingExposure = 1.0;
+    container.appendChild(S.renderer.domElement);
+
+    S.hemi = new THREE.HemisphereLight(0xfff2d8, 0x6a4528, 0.85); S.scene.add(S.hemi);
+    S.dir = new THREE.DirectionalLight(0xfff0cf, 1.25);
+    S.dir.position.set(5, 12, 9); S.dir.castShadow = true;
+    const sz = isTouch ? 1024 : 2048; S.dir.shadow.mapSize.set(sz, sz);
+    Object.assign(S.dir.shadow.camera, { near: 1, far: 34, left: -10, right: 10, top: 10, bottom: -10 });
+    S.dir.shadow.bias = -0.0006;
+    S.scene.add(S.dir);
+
+    // 실내 보조광 (밤 / 비 올 때 은은한 등불)
+    S.fillLight = new THREE.PointLight(0xffc27a, 0.4, 16); S.fillLight.position.set(0, 5.0, 3); S.scene.add(S.fillLight);
+    S.fillLight2 = new THREE.PointLight(0xffc27a, 0.3, 14); S.fillLight2.position.set(0, 4.8, -1.5); S.scene.add(S.fillLight2);
+
+    makeTextures();
+    makeEnv();
+
+    S.cur = { numbers: {}, colors: {} };
+    const w0 = WX[0];
+    ['fogD', 'hemi', 'dir', 'paper', 'lantern', 'glow', 'candle', 'exp', 'shafts', 'rain'].forEach(k => S.cur.numbers[k] = w0[k]);
+    ['bg', 'fog', 'hemiSky', 'hemiGnd', 'dirCol', 'paperCol'].forEach(k => S.cur.colors[k] = new THREE.Color(w0[k]));
+    S.tgt = WX[0];
+
+    window.addEventListener('resize', onResize); onResize();
+}
+function onResize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    S.camera.aspect = w / h;
+    S.camera.fov = w / h < 0.8 ? 66 : (w / h < 1.2 ? 58 : 52);
+    S.camera.updateProjectionMatrix(); S.renderer.setSize(w, h);
+}
+
+/* ---------------- 법당 건물 ---------------- */
+function buildHall() {
+    const sc = S.scene;
+    const W = 14, Z0 = -6, Z1 = 10.5, depth = Z1 - Z0, cz = (Z0 + Z1) / 2, H = 6.9;
+
+    // 마루
+    const floor = box(W + 0.6, 0.3, depth + 0.4, M(0xffffff, 0.42, 0, 0.35, { map: S.woodTex }), 0, -0.15, cz, sc, false, true);
+    // 붉은 카펫
+    const carpet = box(3.0, 0.02, 13, M(0xffffff, 0.8, 0, 0.1, { map: S.carpetTex }), 0, 0.012, 3.2, sc, false, true);
+    // 천장 (우물천장)
+    const ceil = new THREE.Mesh(new THREE.PlaneGeometry(W, depth), M(0xffffff, 0.7, 0, 0.2, { map: S.ceilTex }));
+    ceil.rotation.x = Math.PI / 2; ceil.position.set(0, H, cz); sc.add(ceil);
+    // 천장 격자 보
+    for (let i = -3; i <= 3; i++) box(0.16, 0.22, depth, M(0x5a1c10, 0.6), i * 2, H - 0.1, cz, sc);
+    for (let z = Z0 + 1.5; z < Z1; z += 3) box(W, 0.22, 0.16, M(0x5a1c10, 0.6), 0, H - 0.1, z, sc);
+
+    // 벽
+    const wallMat = M(0x3a1d0e, 0.8, 0, 0.1);
+    box(W + 0.6, H, 0.3, wallMat, 0, H / 2, Z0 - 0.15, sc);
+    box(W + 0.6, H, 0.3, wallMat, 0, H / 2, Z1 + 0.15, sc);
+    [-1, 1].forEach(sg => {
+        box(0.3, H, depth, wallMat, sg * (W / 2 + 0.15), H / 2, cz, sc);
+        box(0.12, 1.3, depth, M(0x4a2815, 0.6), sg * (W / 2 - 0.02), 0.65, cz, sc);
+        // 꽃살문
+        const n = 6, pw = depth / n;
+        for (let i = 0; i < n; i++) {
+            const pm = M(0xffffff, 0.9, 0, 0, { map: S.paperTex, emissive: 0xfff0c8, emissiveMap: S.paperTex, emissiveIntensity: 1 });
+            S.paperMats.push(pm);
+            const p = new THREE.Mesh(new THREE.PlaneGeometry(pw - 0.1, 4.6), pm);
+            p.position.set(sg * (W / 2 - 0.016), 3.6, Z0 + pw * (i + 0.5)); p.rotation.y = -sg * Math.PI / 2; sc.add(p);
+            box(0.14, 4.7, 0.16, M(0x2c150a, 0.6), sg * (W / 2 - 0.06), 3.6, Z0 + pw * i, sc);
+        }
+        box(0.14, 0.16, depth, M(0x2c150a, 0.6), sg * (W / 2 - 0.06), 5.95, cz, sc);
+        box(0.14, 0.16, depth, M(0x2c150a, 0.6), sg * (W / 2 - 0.06), 1.3, cz, sc);
+        // 창에 흐르는 빗줄기
+        const rm = new THREE.MeshBasicMaterial({ map: S.rainTex[sg > 0 ? 0 : 1], transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, color: 0xcfe2ff });
+        S.rainMats.push(rm);
+        const rp = new THREE.Mesh(new THREE.PlaneGeometry(depth, 4.6), rm);
+        rp.position.set(sg * (W / 2 - 0.03), 3.6, cz); rp.rotation.y = -sg * Math.PI / 2; sc.add(rp);
+    });
+    // 단청 띠 (벽 상단 / 기둥 사이)
+    box(W, 0.45, 0.2, new THREE.MeshStandardMaterial({ map: dancheong([W / 3, 1]), roughness: 0.6 }), 0, 6.5, Z0 + 0.12, sc);
+    box(0.2, 0.45, depth, new THREE.MeshStandardMaterial({ map: dancheong([depth / 3, 1]), roughness: 0.6 }), -(W / 2 - 0.1), 6.5, cz, sc);
+    box(0.2, 0.45, depth, new THREE.MeshStandardMaterial({ map: dancheong([depth / 3, 1]), roughness: 0.6 }), (W / 2 - 0.1), 6.5, cz, sc);
+
+    // 기둥 + 공포
+    const pillarMat = M(0x8a1f17, 0.38, 0.05, 0.5);
+    const stoneMat = M(0x8c8a84, 0.85, 0, 0.1);
+    const goldTrim = M(0xe8b923, 0.35, 0.8, 1.0);
+    const capMat = () => new THREE.MeshStandardMaterial({ map: dancheong([1, 1]), roughness: 0.6 });
+    const zs = [-4.4, -0.4, 3.6, 7.6];
+    const addPillar = (x, z, collide) => {
+        cyl(0.52, 0.58, 0.28, stoneMat, x, 0.14, z, sc, 20);
+        cyl(0.33, 0.37, 6.2, pillarMat, x, 3.35, z, sc, 24, true);
+        cyl(0.4, 0.4, 0.08, goldTrim, x, 0.3, z, sc, 24);
+        box(1.0, 0.24, 1.0, capMat(), x, 6.55, z, sc);
+        box(1.7, 0.18, 0.5, capMat(), x, 6.78, z, sc);
+        box(0.5, 0.18, 1.7, capMat(), x, 6.78, z, sc);
+        if (collide) S.pillars.push({ x, z, r: 0.75 });
+    };
+    zs.forEach(z => { [-1, 1].forEach(sg => { addPillar(sg * 4.6, z, true); addPillar(sg * (W / 2 - 0.4), z, false); }); });
+    [Z0 + 0.4, Z1 - 0.4].forEach(z => [-1, 1].forEach(sg => addPillar(sg * (W / 2 - 0.4), z, false)));
+    // 가로 창방
+    zs.forEach(z => box(W - 0.4, 0.5, 0.5, new THREE.MeshStandardMaterial({ map: dancheong([W / 3, 1]), roughness: 0.6 }), 0, 6.1, z, sc));
+    [-1, 1].forEach(sg => box(0.5, 0.5, depth - 0.4, new THREE.MeshStandardMaterial({ map: dancheong([depth / 3, 1]), roughness: 0.6 }), sg * 4.6, 6.1, cz, sc));
+}
+
+/* ---------------- 불단 · 닫집 · 후불탱화 ---------------- */
+function buildAltar() {
+    const sc = S.scene;
+    const darkWood = M(0x2c150a, 0.45, 0.05, 0.4);
+    const gold = M(0xf0c040, 0.3, 1, 1.4, { emissive: 0x4a3000, emissiveIntensity: 0.3 });
+
+    // 후불탱화
+    const paint = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 5.4), M(0xffffff, 0.8, 0, 0, { map: makePaintTex(), emissive: 0x442211, emissiveMap: null, emissiveIntensity: 0 }));
+    paint.material.emissive = new THREE.Color(0x221108);
+    paint.position.set(0, 3.55, -5.98); sc.add(paint);
+    box(6.9, 0.14, 0.12, gold, 0, 6.3, -5.95, sc); box(6.9, 0.14, 0.12, gold, 0, 0.8, -5.95, sc);
+    box(0.14, 5.6, 0.12, gold, -3.38, 3.55, -5.95, sc); box(0.14, 5.6, 0.12, gold, 3.38, 3.55, -5.95, sc);
+    // 좌우 벽 장식 병풍 느낌의 목재 패널
+    [-1, 1].forEach(sg => box(1.6, 5.4, 0.12, M(0x5a2a14, 0.55), sg * 5.2, 3.55, -5.9, sc));
+
+    // 불단 (2단)
+    box(7.4, 0.6, 3.0, darkWood, 0, 0.3, -4.5, sc, true);
+    box(7.5, 0.06, 3.1, gold, 0, 0.62, -4.5, sc);
+    box(6.2, 0.28, 2.4, darkWood, 0, 0.77, -4.5, sc, true);
+    box(6.3, 0.05, 2.5, gold, 0, 0.93, -4.5, sc);
+    for (let i = -3; i <= 3; i++) {
+        box(0.7, 0.4, 0.05, M(0x8a1f17, 0.5), i * 1.0, 0.32, -2.97, sc);
+        ell(gold, 0.12, 0.12, 0.04, i * 1.0, 0.32, -2.93, sc, false);
+    }
+
+    // 닫집 (천개)
+    const cz = -4.5;
+    box(6.0, 0.35, 3.0, new THREE.MeshStandardMaterial({ map: dancheong([2, 1]), roughness: 0.55 }), 0, 5.75, cz, sc);
+    box(5.2, 0.22, 2.4, gold, 0, 6.0, cz, sc);
+    box(4.2, 0.3, 1.9, new THREE.MeshStandardMaterial({ map: dancheong([2, 1]), roughness: 0.55 }), 0, 6.2, cz, sc);
+    for (let i = 0; i < 15; i++) {
+        const x = -2.8 + i * 0.4;
+        cyl(0.01, 0.01, 0.55, gold, x, 5.35, cz + 1.4, sc, 6);
+        ell(gold, 0.07, 0.11, 0.07, x, 5.02, cz + 1.4, sc, false);
+        if (i % 2 === 0) ell(M(0xd94b4b, 0.4, 0.1, 0.5), 0.05, 0.05, 0.05, x, 5.15, cz + 1.4, sc, false);
+    }
+    [-1, 1].forEach(sg => { cyl(0.03, 0.03, 0.9, gold, sg * 2.9, 5.1, cz + 1.3, sc, 8); ell(gold, 0.12, 0.2, 0.12, sg * 2.9, 4.6, cz + 1.3, sc, false); });
+}
+
+/* ---------------- 부처님 (석가모니불 좌상) ---------------- */
+function buildBuddha() {
+    const G = new THREE.Group(); G.position.set(0, 0.95, -4.5); G.scale.setScalar(0.8);
+    const gold = M(0xf3c542, 0.3, 1, 1.5, { emissive: 0x4a3000, emissiveIntensity: 0.3 });
+    const goldD = M(0xd2a02a, 0.38, 1, 1.3, { emissive: 0x3a2200, emissiveIntensity: 0.25 });
+    const hair = M(0x1b2a5c, 0.45, 0.3, 0.8);
+    const hair2 = M(0x2d4496, 0.4, 0.3, 0.9);
+    const dark = M(0x3b2a10, 0.6, 0, 0.2);
+    const lips = M(0xc2693f, 0.5, 0.2, 0.5);
+
+    /* --- 연화대좌 --- */
+    cyl(2.0, 2.1, 0.16, goldD, 0, 0.08, 0, G, 8, true);
+    cyl(1.7, 1.8, 0.26, gold, 0, 0.29, 0, G, 8, true);
+    const petal = (R, y, tilt, n, sx, sy, mat) => {
+        for (let i = 0; i < n; i++) {
+            const a = i / n * Math.PI * 2; const pv = new THREE.Group(); pv.rotation.y = a;
+            const p = ell(mat, sx, sy, sx * 0.3, R, y, 0, pv); p.rotation.z = tilt; G.add(pv);
+        }
+    };
+    petal(1.62, 0.52, 0.55, 16, 0.32, 0.36, goldD);
+    const waist = new THREE.Mesh(latheGeo([[1.15, 0.42], [0.85, 0.52], [0.72, 0.62], [0.85, 0.72], [1.2, 0.82]], 32), gold);
+    waist.castShadow = true; G.add(waist);
+    petal(1.55, 0.86, -0.6, 16, 0.34, 0.42, gold);
+    petal(1.18, 0.94, -0.3, 14, 0.26, 0.36, goldD);
+    cyl(1.5, 1.6, 0.1, gold, 0, 1.0, 0, G, 32, true);
+
+    const yb = 1.05;
+    /* --- 결가부좌 하체 --- */
+    ell(goldD, 1.55, 0.36, 0.98, 0, yb + 0.34, 0.05, G);
+    [-1, 1].forEach(sg => {
+        ell(goldD, 0.55, 0.34, 0.72, sg * 1.05, yb + 0.42, 0.55, G);
+        const sole = ell(gold, 0.42, 0.1, 0.3, sg * 0.72, yb + 0.76, 0.68, G); sole.rotation.x = -0.35; sole.rotation.z = -sg * 0.15;
+    });
+    // 옷주름 (하체)
+    const lapGeo = latheGeo([[1.45, yb + 0.28], [1.35, yb + 0.55], [0.9, yb + 0.72], [0.001, yb + 0.76]], 40, 1, 0.7);
+    wrinkle(lapGeo, 0.03, 14, 0); const lap = new THREE.Mesh(lapGeo, goldD); lap.position.z = 0.08; lap.castShadow = true; G.add(lap);
+
+    /* --- 상체 --- */
+    const torsoPts = [[0.001, 1.62], [0.78, 1.66], [0.74, 1.95], [0.62, 2.35], [0.66, 2.8], [0.8, 3.05], [0.7, 3.2], [0.3, 3.28], [0.001, 3.3]];
+    const torsoG = latheGeo(torsoPts, 40, 1, 0.65); const torso = new THREE.Mesh(torsoG, gold); torso.castShadow = true; G.add(torso);
+    // 가사: 하부 전체
+    const robeLow = latheGeo([[0.8, 1.6], [0.78, 1.95], [0.66, 2.35], [0.66, 2.62]], 40, 1, 0.68); wrinkle(robeLow, 0.04, 12);
+    const rl = new THREE.Mesh(robeLow, goldD); rl.castShadow = true; G.add(rl);
+    // 가사: 상부 (우견편단)
+    const robeUp = latheGeo([[0.66, 2.55], [0.68, 2.8], [0.84, 3.05], [0.74, 3.2], [0.34, 3.27]], 40, 1, 0.68, -0.3, Math.PI * 2 - 1.6);
+    wrinkle(robeUp, 0.04, 10); const ru = new THREE.Mesh(robeUp, new THREE.MeshStandardMaterial({ color: 0xd2a02a, roughness: 0.38, metalness: 1, envMapIntensity: 1.3, side: THREE.DoubleSide, emissive: 0x3a2200, emissiveIntensity: 0.25 }));
+    ru.castShadow = true; G.add(ru);
+    // 가슴 옷깃 선
+    for (let i = 0; i < 3; i++) {
+        const t = new THREE.Mesh(new THREE.TorusGeometry(0.62 - i * 0.04, 0.018, 6, 24, Math.PI * 0.9), goldD);
+        t.position.set(0.1, 2.82 - i * 0.12, 0.38); t.rotation.z = Math.PI * 1.05 + 0.3; t.scale.set(1, 0.8, 1); G.add(t);
+    }
+
+    /* --- 팔 (좌: 선정 / 우: 항마촉지) --- */
+    const mkArm = (sh, el, ha, mat, r1, r2) => {
+        const up = makeLimb(r2 + 0.02, r1, mat), fo = makeLimb(r2 - 0.03, r2 + 0.02, mat);
+        setLimb(up, sh, el); setLimb(fo, el, ha); G.add(up); G.add(fo);
+        ell(mat, r2 + 0.03, r2 + 0.03, r2 + 0.03, el.x, el.y, el.z, G); ell(mat, r1 + 0.02, r1 + 0.02, r1 + 0.02, sh.x, sh.y, sh.z, G);
+    };
+    mkArm(V3(-0.76, 3.0, 0.02), V3(-1.2, 2.35, 0.14), V3(-1.22, 1.9, 0.9), gold, 0.2, 0.17);   // 우수 → 무릎
+    mkArm(V3(0.76, 3.0, 0.02), V3(1.16, 2.32, 0.2), V3(0.38, 1.9, 0.85), goldD, 0.22, 0.19);   // 좌수 → 무릎 위 선정인
+    // 손
+    const hand = (x, y, z, rotX, sg) => {
+        const hg = new THREE.Group(); hg.position.set(x, y, z); hg.rotation.x = rotX; G.add(hg);
+        ell(gold, 0.2, 0.06, 0.24, 0, 0, 0, hg);
+        for (let i = 0; i < 4; i++) ell(gold, 0.045, 0.045, 0.2, -0.11 + i * 0.075, 0, 0.27 - Math.abs(i - 1.5) * 0.03, hg);
+        ell(gold, 0.05, 0.05, 0.14, sg * 0.2, 0, 0.1, hg);
+    };
+    hand(-1.22, 1.88, 0.98, 1.2, -1);   // 손끝이 땅을 향함
+    hand(0.38, 1.9, 0.9, 0.02, 1);
+
+    /* --- 목 / 머리 --- */
+    cyl(0.23, 0.27, 0.3, gold, 0, 3.32, 0.02, G, 20, true);
+    for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(new THREE.TorusGeometry(0.235, 0.012, 6, 20), goldD); t.rotation.x = Math.PI / 2; t.position.set(0, 3.22 + i * 0.07, 0.02); G.add(t); }
+
+    const head = new THREE.Group(); head.position.set(0, 3.95, 0.04); head.rotation.x = 0.07; G.add(head);
+    ell(gold, 0.47, 0.56, 0.5, 0, 0, 0, head);
+    [-1, 1].forEach(sg => {
+        ell(dark, 0.085, 0.014, 0.02, sg * 0.17, 0.03, 0.455, head, false).rotation.z = -sg * 0.1;
+        ell(gold, 0.105, 0.03, 0.035, sg * 0.17, 0.065, 0.45, head, false);
+        ell(gold, 0.17, 0.016, 0.025, sg * 0.17, 0.15, 0.443, head, false).rotation.z = sg * 0.12;
+        ell(gold, 0.07, 0.3, 0.1, sg * 0.5, -0.1, 0, head);
+    });
+    ell(gold, 0.065, 0.11, 0.08, 0, -0.07, 0.49, head, false);
+    ell(lips, 0.13, 0.03, 0.05, 0, -0.235, 0.44, head, false);
+    ell(lips, 0.1, 0.028, 0.045, 0, -0.285, 0.425, head, false);
+    ell(M(0xffffff, 0.2, 0.3, 1), 0.035, 0.035, 0.03, 0, 0.2, 0.47, head, false);
+    // 머리카락 (나발)
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, 0, 1.25), hair);
+    cap.scale.set(0.485, 0.575, 0.515); cap.rotation.x = -0.4; head.add(cap);
+    const axis = V3(0, Math.cos(0.4), -Math.sin(0.4));
+    const curls = [];
+    for (let th = 0.1; th < 1.75; th += 0.16) {
+        const n = Math.max(1, Math.round(Math.sin(th) * 26));
+        for (let k = 0; k < n; k++) {
+            const ph = k / n * Math.PI * 2 + th;
+            const d = V3(Math.sin(th) * Math.sin(ph), Math.cos(th), Math.sin(th) * Math.cos(ph));
+            if (d.dot(axis) > Math.cos(1.17)) curls.push(V3(d.x * 0.495, d.y * 0.59, d.z * 0.525));
+        }
+    }
+    const im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.058, 8, 6), hair2, curls.length);
+    const dm = new THREE.Object3D(); curls.forEach((p, i) => { dm.position.copy(p); dm.updateMatrix(); im.setMatrixAt(i, dm.matrix); });
+    head.add(im);
+    ell(hair, 0.27, 0.22, 0.27, 0, 0.58, -0.1, head);
+    ell(M(0xd62839, 0.2, 0.4, 1, { emissive: 0x550a10, emissiveIntensity: 0.6 }), 0.06, 0.06, 0.06, 0, 0.78, -0.1, head, false);
+
+    /* --- 광배 --- */
+    const aura = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 6.2), new THREE.MeshBasicMaterial({ map: makeAuraTex(), transparent: true, depthWrite: false, side: THREE.DoubleSide, opacity: 0.95 }));
+    aura.position.set(0, 2.9, -0.95); G.add(aura);
+    S.haloDisc = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 2.8), new THREE.MeshBasicMaterial({ map: makeHaloTex(), transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+    S.haloDisc.position.set(0, 3.98, -0.62); G.add(S.haloDisc);
+    S.haloGlow = glowSprite(0xffd870, 6.5, 0.5, 0, 3.4, -0.7, G);
+    S.glows.push({ s: S.haloGlow, base: 2.2 });
+
+    // 불상 조명
+    S.statueLight = new THREE.PointLight(0xffdca0, 1.5, 11); S.statueLight.position.set(0, 4.0, -2.0); S.scene.add(S.statueLight);
+    G.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
+    S.scene.add(G); S.buddha = G;
+    S.pickables.push({ obj: G, fn: () => { playBell(1); toast('나무 석가모니불 🙏'); } });
+}
+
+/* ---------------- 상단 · 공양물 · 향로 ---------------- */
+function buildOfferings() {
+    const sc = S.scene; const T = new THREE.Group(); T.position.set(0, 0, -2.6); sc.add(T);
+    const gold = M(0xf0c040, 0.3, 1, 1.4, { emissive: 0x3a2400, emissiveIntensity: 0.25 });
+    const brass = M(0xb8862b, 0.4, 0.9, 1.2);
+    box(3.9, 0.8, 1.1, M(0x7a1313, 0.85, 0, 0.1), 0, 0.4, 0, T, true);
+    box(4.1, 0.07, 1.25, M(0x2c150a, 0.4, 0.05, 0.4), 0, 0.835, 0, T, true);
+    box(3.9, 0.05, 0.02, gold, 0, 0.55, 0.56, T); box(3.9, 0.05, 0.02, gold, 0, 0.25, 0.56, T);
+
+    // 향로
+    const bowl = new THREE.Mesh(latheGeo([[0.001, 0.0], [0.12, 0.02], [0.2, 0.1], [0.26, 0.2], [0.25, 0.27], [0.14, 0.31], [0.12, 0.28]], 28), brass);
+    bowl.position.set(0, 0.87, 0); bowl.castShadow = true; T.add(bowl);
+    for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3; ell(brass, 0.04, 0.06, 0.04, Math.cos(a) * 0.16, 0.9, Math.sin(a) * 0.16, T); }
+    cyl(0.008, 0.008, 0.34, M(0xa31d1d, 0.6), 0, 1.3, 0, T, 6); cyl(0.008, 0.008, 0.3, M(0xa31d1d, 0.6), 0.06, 1.28, 0.02, T, 6);
+    glowSprite(0xff6a2a, 0.1, 0.9, 0, 1.44, 0, T);
+
+    // 촛대 + 촛불
+    [-1, 1].forEach(sg => {
+        const x = sg * 1.15;
+        const stick = new THREE.Mesh(latheGeo([[0.001, 0.0], [0.1, 0.0], [0.06, 0.06], [0.035, 0.2], [0.07, 0.28], [0.001, 0.3]], 16), gold);
+        stick.position.set(x, 0.87, 0); stick.castShadow = true; T.add(stick);
+        cyl(0.04, 0.04, 0.42, M(0xf6f1e4, 0.5, 0, 0.1), x, 1.38, 0, T, 12, true);
+        const fl = ell(new THREE.MeshBasicMaterial({ color: 0xffc060 }), 0.035, 0.09, 0.035, x, 1.64, 0, T, false);
+        S.flames.push(fl);
+        const g1 = glowSprite(0xff9a3c, 0.7, 0.55, x, 1.66, 0, T); S.glows.push({ s: g1, base: 2.6 });
+        const pl = new THREE.PointLight(0xff9a3c, 0.9, 7); pl.position.set(x, 1.8, -2.4); sc.add(pl); S.candleLights.push(pl);
+    });
+
+    // 연꽃 화병
+    [-1, 1].forEach(sg => {
+        const x = sg * 0.62;
+        const vase = new THREE.Mesh(latheGeo([[0.001, 0.0], [0.08, 0.0], [0.11, 0.1], [0.07, 0.24], [0.05, 0.3], [0.09, 0.4]], 18), M(0xdfe6ee, 0.15, 0.1, 0.7));
+        vase.position.set(x, 0.87, 0.05); T.add(vase);
+        cyl(0.01, 0.01, 0.45, M(0x3a7a3a, 0.8), x, 1.5, 0.05, T, 6);
+        for (let r = 0; r < 2; r++) for (let p = 0; p < 8; p++) {
+            const a = p / 8 * Math.PI * 2 + r * 0.4; const pv = new THREE.Group(); pv.position.set(x, 1.77, 0.05); pv.rotation.y = a;
+            const pt = ell(M(r ? 0xf9cfe0 : 0xf2a6c3, 0.5, 0, 0.2), 0.045, 0.11 - r * 0.02, 0.018, 0.06 - r * 0.02, r * 0.03, 0, pv, false);
+            pt.rotation.z = -0.5 + r * 0.35; T.add(pv);
+        }
+        ell(M(0xf7d54a, 0.6), 0.03, 0.03, 0.03, x, 1.79, 0.05, T, false);
+    });
+
+    // 과일 공양
+    const dish = (x) => {
+        cyl(0.3, 0.2, 0.05, gold, x, 0.89, 0.1, T, 20);
+        const cols = [0xd62f2f, 0xf08c1e, 0x9bc53d, 0xd62f2f, 0xf2c335];
+        const ps = [[-0.12, 0.0], [0.12, 0.0], [0, 0.12], [0, -0.12], [0, 0.0]];
+        ps.forEach((p, i) => ell(M(cols[i], 0.5, 0, 0.2), 0.09, 0.09, 0.09, x + p[0], 0.99, 0.1 + p[1], T));
+        ell(M(0xd62f2f, 0.5, 0, 0.2), 0.085, 0.085, 0.085, x, 1.09, 0.1, T);
+    };
+    dish(-1.7); dish(1.7);
+    // 찻잔
+    [-0.45, -0.25, 0.25, 0.45].forEach(x => {
+        const cup = new THREE.Mesh(latheGeo([[0.001, 0], [0.04, 0], [0.06, 0.06], [0.065, 0.09]], 14), M(0xf2efe6, 0.2, 0.1, 0.5));
+        cup.position.set(x, 0.87, 0.38); T.add(cup);
+    });
+
+    // 연기
+    for (let i = 0; i < 16; i++) {
+        const m = new THREE.SpriteMaterial({ map: S.smokeTex, transparent: true, opacity: 0, depthWrite: false });
+        const s = new THREE.Sprite(m); s.userData = { life: i / 16, ox: rand(-1, 1) }; sc.add(s); S.smoke.push(s);
+    }
+    S.smokeOrigin = V3(0, 2.3, -2.6);
+
+    // 먼지 입자
+    const n = 140, pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { pos[i * 3] = rand(-5.5, 5.5); pos[i * 3 + 1] = rand(0.5, 6); pos[i * 3 + 2] = rand(-5, 10); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    S.dust = new THREE.Points(g, new THREE.PointsMaterial({ map: S.glowTex, size: 0.09, color: 0xffe8b0, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending }));
+    sc.add(S.dust);
+
+    // 햇살 기둥
+    const stex = tex(64, 256, (gg, w, h) => { const gr = gg.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,240,200,0)'); gr.addColorStop(0.3, 'rgba(255,240,200,.9)'); gr.addColorStop(1, 'rgba(255,240,200,0)'); gg.fillStyle = gr; gg.fillRect(0, 0, w, h); });
+    [[-5.6, 2.5, 0.5], [5.6, 2.0, -0.5], [-5.6, 6.0, 0.55], [5.6, 6.5, -0.55], [-5.6, -1.5, 0.45]].forEach(([x, z, rz]) => {
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 7), new THREE.MeshBasicMaterial({ map: stex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }));
+        m.position.set(x, 3.4, z); m.rotation.z = rz; m.rotation.y = x < 0 ? 0.3 : -0.3; sc.add(m); S.shafts.push(m);
+    });
+}
+
+/* ---------------- 연등 ---------------- */
+function buildLanterns() {
+    const sc = S.scene; const colors = [0xff4d79, 0xffb02e, 0x6ee7a1, 0xff7a3d, 0xc084fc, 0xfde047, 0xf472b6];
+    const bodyG = new THREE.SphereGeometry(0.26, 16, 12), petG = new THREE.SphereGeometry(0.2, 8, 6);
+    const stringMat = M(0x2a1a10, 0.8), cap = M(0xe8b923, 0.4, 0.8, 1);
+    let ci = 0;
+    [-4.0, -2.2, 2.2, 4.0].forEach(x => {
+        for (let z = -2; z <= 9; z += 2.2) {
+            const col = colors[ci++ % colors.length]; const y = 4.7 + Math.sin(ci * 1.7) * 0.3;
+            const mat = new THREE.MeshStandardMaterial({ color: col, roughness: 0.55, emissive: col, emissiveIntensity: 0.5 }); S.lanternMats.push(mat);
+            const g = new THREE.Group(); g.position.set(x, y, z);
+            const body = new THREE.Mesh(bodyG, mat); body.scale.set(1, 0.9, 1); g.add(body);
+            for (let p = 0; p < 10; p++) {
+                const a = p / 10 * Math.PI * 2; const pv = new THREE.Group(); pv.rotation.y = a; g.add(pv);
+                const pt = new THREE.Mesh(petG, mat); pt.scale.set(0.45, 1.0, 0.16); pt.position.set(0.2, -0.08, 0); pt.rotation.z = -0.25; pv.add(pt);
             }
+            cyl(0.07, 0.07, 0.06, cap, 0, 0.26, 0, g, 10);
+            for (let t = 0; t < 3; t++) cyl(0.012, 0.03, 0.4, new THREE.MeshStandardMaterial({ color: [0xffffff, col, 0xffd25e][t], roughness: 0.7 }), (t - 1) * 0.07, -0.42, 0, g, 5);
+            cyl(0.006, 0.006, H_STR(y), stringMat, 0, 0.26 + H_STR(y) / 2, 0, g, 4);
+            sc.add(g);
+            const gl = glowSprite(col, 1.5, 0.3, x, y, z, sc); S.glows.push({ s: gl, base: 1.0 });
+        }
+    });
+}
+const H_STR = y => 6.9 - y - 0.26;
 
-            rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
-            const rainMat = new THREE.PointsMaterial({
-                color: 0x38bdf8,
-                size: 0.06,
-                transparent: true,
-                opacity: 0.7
+/* ---------------- 방석 · 목탁 · 경상 ---------------- */
+function buildProps() {
+    const sc = S.scene;
+    const cush = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.15, 1.4), [M(0x8a1818, 0.7), M(0x8a1818, 0.7), new THREE.MeshStandardMaterial({ map: S.cushionTex, roughness: 0.6 }), M(0x8a1818, 0.7), M(0x8a1818, 0.7), M(0x8a1818, 0.7)]);
+    cush.position.set(0, 0.08, 1.2); cush.castShadow = true; cush.receiveShadow = true; sc.add(cush);
+    box(1.68, 0.05, 1.48, M(0xe8b923, 0.4, 0.8, 1), 0, 0.03, 1.2, sc);
+
+    // 목탁
+    const mk = new THREE.Group(); mk.position.set(-1.7, 0, 1.2); sc.add(mk);
+    cyl(0.3, 0.3, 0.06, M(0x8a1818, 0.8), 0, 0.03, 0, mk, 20);
+    const wood = M(0xa15a22, 0.45, 0, 0.3);
+    ell(wood, 0.2, 0.16, 0.17, 0, 0.2, 0, mk);
+    ell(M(0x2a1208, 0.8), 0.14, 0.012, 0.02, 0, 0.23, 0.14, mk, false);
+    const stick = cyl(0.014, 0.014, 0.28, wood, 0.26, 0.15, 0.08, mk, 8); stick.rotation.z = 0.5;
+    ell(wood, 0.04, 0.04, 0.04, 0.33, 0.27, 0.08, mk);
+    S.pickables.push({ obj: mk, fn: () => playMoktak(1) });
+
+    // 경상 + 불경
+    const d = new THREE.Group(); d.position.set(4.0, 0, 2.6); d.rotation.y = -0.5; sc.add(d);
+    const dw = M(0x3d1e10, 0.45, 0.05, 0.3);
+    box(1.1, 0.06, 0.6, dw, 0, 0.42, 0, d, true); [[-.5, -.25], [.5, -.25], [-.5, .25], [.5, .25]].forEach(p => box(0.06, 0.4, 0.06, dw, p[0], 0.2, p[1], d, true));
+    box(0.5, 0.06, 0.36, M(0xfef3c7, 0.8), 0, 0.48, 0, d); box(0.5, 0.02, 0.36, M(0x7a1f12, 0.7), 0, 0.44, 0, d);
+    S.pickables.push({ obj: d, fn: openScripture });
+}
+
+/* ---------------- 스님 ---------------- */
+function buildMonk() {
+    const root = new THREE.Group(); root.position.set(0, 0, 1.2); root.rotation.y = Math.PI; root.scale.setScalar(1.12); S.monk = root;
+    const skin = M(0xe6b995, 0.55, 0, 0.15);
+    const robe = new THREE.MeshStandardMaterial({ color: 0x80848a, roughness: 0.85, metalness: 0, envMapIntensity: 0.1, side: THREE.DoubleSide });
+    const robeD = new THREE.MeshStandardMaterial({ color: 0x6a6e74, roughness: 0.9, envMapIntensity: 0.1, side: THREE.DoubleSide });
+    const white = M(0xf3efe6, 0.8, 0, 0.1);
+    const gasa = new THREE.MeshStandardMaterial({ map: S.gasaTex, roughness: 0.8, envMapIntensity: 0.15, side: THREE.DoubleSide });
+    const P = S.mpParts = {};
+
+    // 하의 (장삼 자락)
+    const skG = latheGeo([[0.34, 0.02], [0.31, 0.12], [0.25, 0.4], [0.2, 0.7], [0.17, 0.88]], 32, 1.05, 0.9); wrinkle(skG, 0.05, 9);
+    P.skirt = new THREE.Mesh(skG, robe); P.skirt.castShadow = true; root.add(P.skirt);
+    // 발 (고무신)
+    P.feet = [-1, 1].map(sg => { const f = ell(M(0x4a4d52, 0.7), 0.07, 0.05, 0.15, sg * 0.1, 0.04, 0.1, root); return f; });
+
+    // 허리 그룹
+    const waist = new THREE.Group(); waist.position.y = 0.85; root.add(waist); P.waist = waist;
+    const tG = latheGeo([[0.17, 0], [0.19, 0.15], [0.2, 0.3], [0.225, 0.45], [0.22, 0.51], [0.1, 0.56], [0.001, 0.58]], 28, 1.15, 0.72); wrinkle(tG, 0.02, 7);
+    const torso = new THREE.Mesh(tG, robe); torso.castShadow = true; waist.add(torso);
+    // 허리띠
+    const belt = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.016, 8, 28), robeD); belt.rotation.x = Math.PI / 2; belt.scale.set(1.15, 0.72, 1); belt.position.y = 0.02; waist.add(belt);
+    // 가사 (등을 덮는 갈색 가사)
+    const gG = latheGeo([[0.205, -0.1], [0.215, 0.0], [0.24, 0.15], [0.255, 0.3], [0.27, 0.45], [0.26, 0.52]], 28, 1.15, 0.74, 0.55, 5.2); wrinkle(gG, 0.02, 6);
+    const gm = new THREE.Mesh(gG, gasa); gm.castShadow = true; waist.add(gm);
+    const sash = new THREE.Mesh(new THREE.PlaneGeometry(0.1, 0.62), gasa); sash.position.set(0.02, 0.28, 0.17); sash.rotation.z = -0.55; waist.add(sash);
+    // 동정 (흰 깃)
+    const col = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.017, 8, 20), white); col.rotation.x = Math.PI / 2; col.position.y = 0.55; col.scale.set(1.1, 0.8, 1); waist.add(col);
+    // 목 / 머리
+    cyl(0.045, 0.052, 0.09, skin, 0, 0.58, 0.005, waist, 12);
+    const head = new THREE.Group(); head.position.set(0, 0.7, 0.01); waist.add(head); P.head = head;
+    const hd = ell(skin, 0.107, 0.122, 0.115, 0, 0, 0, head);
+    const stub = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 14, 0, Math.PI * 2, 0, 1.5), new THREE.MeshStandardMaterial({ color: 0x8c8076, roughness: 0.9, transparent: true, opacity: 0.5, depthWrite: false }));
+    stub.scale.set(0.109, 0.124, 0.117); stub.rotation.x = -0.3; head.add(stub);
+    const dk = M(0x3b2a22, 0.8);
+    [-1, 1].forEach(sg => {
+        ell(dk, 0.022, 0.0045, 0.006, sg * 0.042, 0.012, 0.105, head, false).rotation.z = -sg * 0.12;
+        ell(dk, 0.03, 0.006, 0.007, sg * 0.047, 0.042, 0.098, head, false).rotation.z = sg * 0.2;
+        ell(skin, 0.012, 0.03, 0.018, sg * 0.108, -0.002, 0, head, false);
+    });
+    ell(skin, 0.013, 0.022, 0.018, 0, -0.016, 0.113, head, false);
+    ell(M(0xa8504a, 0.6), 0.028, 0.006, 0.007, 0, -0.057, 0.101, head, false);
+    // 염주
+    const beadM = M(0x3b2314, 0.35, 0.2, 0.4), bg = new THREE.SphereGeometry(0.017, 8, 6);
+    for (let i = 0; i < 26; i++) {
+        const t = i / 26 * Math.PI * 2;
+        const b = new THREE.Mesh(bg, i === 0 ? M(0xe8b923, 0.3, 0.8, 1) : beadM);
+        b.position.set(Math.sin(t) * 0.1, 0.3 + (Math.cos(t) - 1) * 0.14 + 0.2, 0.15 + (1 - Math.cos(t)) * 0.02 + 0.0);
+        if (i === 0) b.scale.setScalar(1.5); waist.add(b);
+    }
+
+    // 팔 (어깨→팔꿈치→손 : 매 프레임 계산)
+    P.arms = [-1, 1].map(sg => {
+        const up = makeLimb(0.075, 0.06, robe), fo = makeLimb(0.125, 0.078, robe);
+        const hand = ell(skin, 0.042, 0.05, 0.034, 0, 0, 0, root); const el = ell(robe, 0.08, 0.08, 0.08, 0, 0, 0, root); const sh = ell(robe, 0.075, 0.075, 0.075, 0, 0, 0, root);
+        root.add(up); root.add(fo); return { up, fo, hand, el, sh, sg };
+    });
+    S.scene.add(root);
+}
+const _t = new THREE.Vector3();
+function poseMonk() {
+    const P = S.mpParts, m = S.mp;
+    const waistY = THREE.MathUtils.lerp(0.85, 0.24, m.kneel);
+    P.waist.position.y = waistY; P.waist.rotation.x = m.pitch;
+    const sk = 1 + 0.5 * m.kneel; P.skirt.scale.set(sk, (waistY + 0.03) / 0.88, sk);
+    P.feet.forEach((f, i) => {
+        f.visible = m.kneel < 0.35;
+        const ph = S.walk.phase + (i ? Math.PI : 0);
+        f.position.z = 0.1 + Math.sin(ph) * 0.15 * S.walk.amt; f.position.y = 0.04 + Math.max(0, Math.cos(ph)) * 0.05 * S.walk.amt;
+    });
+    const c = Math.cos(m.pitch), s = Math.sin(m.pitch);
+    const toM = (x, y, z) => V3(x, waistY + y * c - z * s, y * s + z * c);
+    P.arms.forEach(a => {
+        const sg = a.sg;
+        const sh = toM(sg * 0.25, 0.46, 0);
+        const hG = toM(sg * 0.028, 0.3, 0.21);
+        const hF = V3(sg * 0.17, 0.045, 0.86);
+        const hand = hG.lerp(hF, m.hand);
+        const mid = sh.clone().add(hand).multiplyScalar(0.5);
+        const el = mid.add(V3(sg * 0.08, -0.1 * (1 - m.hand) + 0.03 * m.hand, -0.03));
+        setLimb(a.up, sh, el); setLimb(a.fo, el, hand);
+        a.hand.position.copy(hand); a.el.position.copy(el); a.sh.position.copy(sh);
+        a.hand.rotation.x = 0; a.hand.scale.set(0.042 - (1 - m.hand) * 0.012, 0.05, 0.034 + m.hand * 0.012);
+    });
+}
+
+/* ---------------- 입력 · 절하기 · 이동 ---------------- */
+function requestBow(n = 1, sam = false) {
+    if (!S.entered) return;
+    initAudio();
+    if (S.bow.active) { S.bow.queue += n; if (sam) S.bow.sam = true; return; }
+    S.bow.queue = n - 1; S.bow.sam = sam; startBow();
+}
+function startBow() {
+    const r = S.monk.position;
+    S.bow.active = true; S.bow.t = 0; S.bow.flags = {};
+    S.bow.slide = Math.hypot(r.x, r.z - 1.2) < 3.4;   // 가까우면 방석 위로 이동
+    playMoktak(1);
+}
+function finishBow() {
+    S.bow.active = false; S.bow.t = 0;
+    S.mp.kneel = S.mp.pitch = S.mp.hand = 0;
+    S.bowCount++;
+    $('bowCountText').innerHTML = `올린 절: <strong class="text-amber-300 font-bold text-base">${S.bowCount}</strong> 배`;
+    playMoktak(0.9);
+    if (S.bow.queue > 0) { S.bow.queue--; setTimeout(startBow, 350); }
+    else if (S.bow.sam) { S.bow.sam = false; setTimeout(() => { toast('삼배를 마쳤습니다 🙏<br><span style="font-size:12px;opacity:.8">마음이 한결 고요해집니다</span>'); playBell(1); }, 400); }
+}
+function updateMonk(dt) {
+    const r = S.monk, B = S.bow;
+    if (B.active) {
+        B.t += dt / 4.8; const t = Math.min(B.t, 1);
+        r.rotation.y = lerpAngle(r.rotation.y, Math.PI, Math.min(1, dt * 9));   // 법당(불상) 쪽을 향함
+        if (B.slide && t < 0.3) { const k = Math.min(1, dt * 5); r.position.x += (0 - r.position.x) * k; r.position.z += (1.2 - r.position.z) * k; }
+        S.mp.kneel = sm(0, 0.2, t) - sm(0.82, 1, t);
+        S.mp.pitch = 1.42 * (sm(0.2, 0.48, t) - sm(0.62, 0.8, t));
+        S.mp.hand = sm(0.28, 0.46, t) - sm(0.62, 0.76, t);
+        if (t > 0.47 && !B.flags.touch) { B.flags.touch = true; playMoktak(0.7, 0.8); }
+        S.walk.amt = 0;
+        if (B.t >= 1) finishBow();
+    } else {
+        let ix = (S.keys.d ? 1 : 0) - (S.keys.a ? 1 : 0) + S.joy.x;
+        let iz = (S.keys.s ? 1 : 0) - (S.keys.w ? 1 : 0) + S.joy.y;
+        const len = Math.hypot(ix, iz);
+        if (len > 0.14) {
+            if (len > 1) { ix /= len; iz /= len; }
+            const yaw = S.cam.yaw, cs = Math.cos(yaw), sn = Math.sin(yaw);
+            const wx = ix * cs + iz * sn, wz = -ix * sn + iz * cs;
+            const spd = 2.7 * Math.min(1, len);
+            r.position.x = clamp(r.position.x + wx * spd * dt, -6.0, 6.0);
+            r.position.z = clamp(r.position.z + wz * spd * dt, -1.75, 8.2);
+            S.pillars.forEach(p => {
+                const dx = r.position.x - p.x, dz = r.position.z - p.z, d = Math.hypot(dx, dz);
+                if (d < p.r) { r.position.x = p.x + dx / d * p.r; r.position.z = p.z + dz / d * p.r; }
             });
+            r.rotation.y = lerpAngle(r.rotation.y, Math.atan2(wx, wz), Math.min(1, dt * 12));
+            S.walk.phase += dt * 8.5 * Math.min(1, len); S.walk.amt += (1 - S.walk.amt) * Math.min(1, dt * 10);
+        } else S.walk.amt += (0 - S.walk.amt) * Math.min(1, dt * 10);
+        ['kneel', 'pitch', 'hand'].forEach(k => S.mp[k] += (0 - S.mp[k]) * Math.min(1, dt * 8));
+    }
+    const onC = Math.abs(r.position.x) < 0.85 && Math.abs(r.position.z - 1.2) < 0.7;
+    S.surf += ((onC ? 0.155 : 0) - S.surf) * Math.min(1, dt * 12);
+    r.position.y = S.surf + Math.abs(Math.sin(S.walk.phase)) * 0.025 * S.walk.amt;
+    poseMonk();
+}
+function updateCamera(dt, snap) {
+    const m = S.monk.position, c = S.cam;
+    const dir = V3(Math.sin(c.yaw) * Math.cos(c.el), Math.sin(c.el), Math.cos(c.yaw) * Math.cos(c.el));
+    const want = V3(m.x, m.y + 1.0, m.z).addScaledVector(dir, c.dist * (S.camera.aspect < 0.8 ? 1.15 : 1));
+    want.x = clamp(want.x, -6.5, 6.5); want.z = Math.min(want.z, 10.2); want.y = clamp(want.y, 0.8, 6.0);
+    const fwd = V3(-Math.sin(c.yaw), 0, -Math.cos(c.yaw));
+    const tgt = V3(m.x, m.y + 2.0, m.z).addScaledVector(fwd, 3.0);
+    const k = snap ? 1 : 1 - Math.exp(-dt * 5);
+    S.camera.position.lerp(want, k); S.camTarget.lerp(tgt, k); S.camera.lookAt(S.camTarget);
+}
 
-            state.rainSystem = new THREE.Points(rainGeo, rainMat);
-            state.rainSystem.visible = false;
-            state.scene.add(state.rainSystem);
-        }
+/* ---------------- 날씨 ---------------- */
+function setWeather(i) {
+    S.weatherIndex = i; S.tgt = WX[i];
+    $('weatherStatus').innerHTML = `<i class="fa-solid ${S.tgt.icon}"></i> <span>${S.tgt.name}</span>`;
+    $('weatherIcon').className = `fa-solid ${S.tgt.icon} text-lg`;
+}
+function stepWeather(dt) {
+    const k = 1 - Math.exp(-dt * 2.2), c = S.cur, t = S.tgt;
+    for (const key in c.numbers) c.numbers[key] += (t[key] - c.numbers[key]) * k;
+    for (const key in c.colors) c.colors[key].lerp(new THREE.Color(t[key]), k);
+    const n = c.numbers;
+    S.scene.background.copy(c.colors.bg); S.scene.fog.color.copy(c.colors.fog); S.scene.fog.density = n.fogD;
+    S.hemi.color.copy(c.colors.hemiSky); S.hemi.groundColor.copy(c.colors.hemiGnd); S.hemi.intensity = n.hemi;
+    S.dir.color.copy(c.colors.dirCol); S.dir.intensity = n.dir;
+    S.renderer.toneMappingExposure = n.exp;
+    S.paperMats.forEach(m => { m.emissive.copy(c.colors.paperCol); m.emissiveIntensity = n.paper; });
+    S.lanternMats.forEach(m => m.emissiveIntensity = n.lantern);
+    S.glows.forEach(g => g.s.material.opacity = Math.min(1, n.glow * g.base));
+    S.shafts.forEach(s => s.material.opacity = n.shafts);
+    S.rainMats.forEach(m => m.opacity = n.rain * 0.55);
+    S.dust.material.opacity = 0.25 + n.shafts * 3;
+    S.fillLight.intensity = 0.25 + n.glow * 0.8; S.fillLight2.intensity = 0.2 + n.glow * 0.6;
+    S.statueLight.intensity = 1.2 + n.glow * 0.8;
+    if (S.audio) S.audio.rainGain.gain.setTargetAtTime(n.rain * 0.22 * S.vol.amb, S.audio.ctx.currentTime, 0.3);
+}
 
-        function toggleWeather() {
-            state.weatherIndex = (state.weatherIndex + 1) % state.weathers.length;
-            const current = state.weathers[state.weatherIndex];
-            state.weather = current.id;
+/* ---------------- 오디오 ---------------- */
+function initAudio() {
+    if (S.audio) { if (S.audio.ctx.state === 'suspended') S.audio.ctx.resume(); return; }
+    const Ctx = window.AudioContext || window.webkitAudioContext; if (!Ctx) return;
+    const ctx = new Ctx(); const master = ctx.createGain(); master.gain.value = 0.9; master.connect(ctx.destination);
+    const len = ctx.sampleRate * 2, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 0.5;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 500;
+    const rg = ctx.createGain(); rg.gain.value = 0;
+    src.connect(bp); bp.connect(hp); hp.connect(rg); rg.connect(master); src.start();
+    S.audio = { ctx, master, rainGain: rg }; if (ctx.state === 'suspended') ctx.resume();
+}
+function playMoktak(p = 1, v = 1) {
+    initAudio(); const A = S.audio; if (!A) return; const { ctx, master } = A; const t = ctx.currentTime;
+    const g = ctx.createGain(); g.connect(master);
+    const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(760 * p, t); o.frequency.exponentialRampToValueAtTime(300 * p, t + 0.07);
+    const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.setValueAtTime(1500 * p, t); o2.frequency.exponentialRampToValueAtTime(620 * p, t + 0.05);
+    const g2 = ctx.createGain(); g2.gain.value = 0.3; o.connect(g); o2.connect(g2); g2.connect(g);
+    const vol = Math.max(0.0001, 0.8 * S.vol.moktak * v); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.start(t); o2.start(t); o.stop(t + 0.22); o2.stop(t + 0.22);
+}
+function playBell(v = 1) {
+    initAudio(); const A = S.audio; if (!A) return; const { ctx, master } = A; const t = ctx.currentTime;
+    [[432, 0.3, 5.5], [1085, 0.16, 4], [1935, 0.08, 2.8], [2860, 0.04, 1.8]].forEach(([f, a, dur]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(master);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, a * S.vol.moktak * v), t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.start(t); o.stop(t + dur + 0.1);
+    });
+}
+let toastTimer = null;
+function toast(html) {
+    const el = $('toast'); el.innerHTML = html; el.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
 
-            document.getElementById('weatherStatus').innerHTML = `<i class="fa-solid ${current.icon}"></i> <span>${current.name}</span>`;
-            document.getElementById('weatherIcon').className = `fa-solid ${current.icon} text-lg`;
+/* ---------------- UI 이벤트 ---------------- */
+function openScripture() {
+    const modal = $('scriptureModal'); modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.children[0].classList.remove('scale-95'); modal.children[0].classList.add('scale-100'); playBell(0.7);
+}
+function closeScripture() {
+    const modal = $('scriptureModal'); modal.classList.add('opacity-0', 'pointer-events-none');
+    modal.children[0].classList.remove('scale-100'); modal.children[0].classList.add('scale-95');
+}
+function initUI() {
+    // 키보드
+    const map = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd', ArrowUp: 'w', ArrowLeft: 'a', ArrowDown: 's', ArrowRight: 'd' };
+    window.addEventListener('keydown', e => {
+        if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) requestBow(1); return; }
+        if (map[e.code]) { S.keys[map[e.code]] = true; e.preventDefault(); }
+    });
+    window.addEventListener('keyup', e => { if (map[e.code]) S.keys[map[e.code]] = false; });
+    window.addEventListener('blur', () => { S.keys = {}; });
 
-            if (state.weather === 'clear') {
-                state.scene.background.setHex(0xfef08a);
-                state.scene.fog.color.setHex(0xdfe7f1);
-                state.dirLight.intensity = 1.4;
-                state.dirLight.color.setHex(0xfff5d6);
-                state.rainSystem.visible = false;
-            } else if (state.weather === 'rain') {
-                state.scene.background.setHex(0x475569);
-                state.scene.fog.color.setHex(0x334155);
-                state.dirLight.intensity = 0.5;
-                state.dirLight.color.setHex(0x94a3b8);
-                state.rainSystem.visible = true;
-            } else if (state.weather === 'night') {
-                state.scene.background.setHex(0x0f172a);
-                state.scene.fog.color.setHex(0x1e1b4b);
-                state.dirLight.intensity = 0.2;
-                state.dirLight.color.setHex(0x818cf8);
-                state.rainSystem.visible = false;
-            }
-        }
+    // 가상 조이스틱
+    const base = $('joyBase'), knob = $('joyKnob'); let jid = null; const R = 48;
+    const joyMove = e => {
+        const r = base.getBoundingClientRect(); let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+        const d = Math.hypot(dx, dy); if (d > R) { dx *= R / d; dy *= R / d; }
+        knob.style.transform = `translate(${dx}px,${dy}px)`; S.joy.x = dx / R; S.joy.y = dy / R;
+    };
+    base.addEventListener('pointerdown', e => { jid = e.pointerId; base.setPointerCapture(jid); joyMove(e); initAudio(); e.preventDefault(); });
+    base.addEventListener('pointermove', e => { if (e.pointerId === jid) joyMove(e); });
+    const joyEnd = e => { if (e.pointerId === jid) { jid = null; S.joy.x = S.joy.y = 0; knob.style.transform = 'translate(0,0)'; } };
+    base.addEventListener('pointerup', joyEnd); base.addEventListener('pointercancel', joyEnd);
 
-        // --- CONTROLS & BOW ANIMATION ENGINE ---
-        function triggerBow() {
-            if (state.isBowing) return;
+    // 절하기 / 삼배 버튼
+    $('btnBowTouch').addEventListener('pointerdown', e => { e.preventDefault(); requestBow(1); });
+    $('btnSamTouch').addEventListener('pointerdown', e => { e.preventDefault(); requestBow(3, true); });
+    $('btnSamDesktop').addEventListener('click', () => requestBow(3, true));
+    if (document.body.classList.contains('touch')) $('btnSamTouch').style.display = 'block';
 
-            state.isBowing = true;
-            state.bowTimer = 0;
+    // 시점 드래그 / 휠
+    const cc = $('canvasContainer'); let did = null, lx = 0, ly = 0, moved = 0;
+    cc.addEventListener('pointerdown', e => { if (did !== null) return; did = e.pointerId; lx = e.clientX; ly = e.clientY; moved = 0; cc.setPointerCapture(did); });
+    cc.addEventListener('pointermove', e => {
+        if (e.pointerId !== did) return; const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY; moved += Math.abs(dx) + Math.abs(dy);
+        S.cam.yaw = clamp(S.cam.yaw - dx * 0.006, -1.5, 1.5); S.cam.el = clamp(S.cam.el + dy * 0.004, 0.1, 0.9);
+    });
+    const dragEnd = e => { if (e.pointerId !== did) return; did = null; if (moved < 6 && e.type === 'pointerup') pickAt(e.clientX, e.clientY); };
+    cc.addEventListener('pointerup', dragEnd); cc.addEventListener('pointercancel', dragEnd);
+    cc.addEventListener('wheel', e => { S.cam.dist = clamp(S.cam.dist + e.deltaY * 0.004, 3.5, 9); }, { passive: true });
 
-            // Turn Monk towards Buddha
-            state.monkGroup.rotation.y = 0;
+    // 버튼
+    $('btnWeather').addEventListener('click', () => { initAudio(); setWeather((S.weatherIndex + 1) % WX.length); });
+    $('btnScripture').addEventListener('click', openScripture);
+    $('closeScripture').addEventListener('click', closeScripture);
+    $('btnAudio').addEventListener('click', () => { initAudio(); $('audioPanel').classList.toggle('hidden'); });
+    $('closeAudioPanel').addEventListener('click', () => $('audioPanel').classList.add('hidden'));
+    $('btnManualMoktak').addEventListener('click', () => playMoktak());
+    $('btnBellChime').addEventListener('click', () => playBell());
+    $('moktakVol').addEventListener('input', e => { S.vol.moktak = e.target.value / 100; $('moktakVolVal').innerText = `${e.target.value}%`; });
+    $('ambVol').addEventListener('input', e => { S.vol.amb = e.target.value / 100; $('ambVolVal').innerText = `${e.target.value}%`; });
+    document.querySelectorAll('.scripture-tab').forEach(tab => {
+        tab.addEventListener('click', e => {
+            document.querySelectorAll('.scripture-tab').forEach(t => { t.classList.remove('border-amber-900', 'text-amber-950', 'font-bold'); t.classList.add('border-transparent', 'text-stone-600'); });
+            e.currentTarget.classList.add('border-amber-900', 'text-amber-950', 'font-bold'); e.currentTarget.classList.remove('border-transparent', 'text-stone-600');
+            document.querySelectorAll('.scripture-content').forEach(c => c.classList.add('hidden')); $(e.currentTarget.getAttribute('data-tab')).classList.remove('hidden');
+        });
+    });
+    $('btnEnter').addEventListener('click', () => {
+        S.entered = true; initAudio(); $('intro').classList.add('hide'); setTimeout(() => $('intro').style.display = 'none', 1000);
+        playBell(1); setTimeout(() => toast(isTouch ? '왼쪽 조이스틱으로 이동하고,<br>오른쪽 <b>절</b> 버튼으로 절을 올리세요' : 'WASD로 이동하고 Space로 절을 올리세요'), 1200);
+    });
+}
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pickAt(x, y) {
+    ndc.set(x / window.innerWidth * 2 - 1, -(y / window.innerHeight) * 2 + 1); ray.setFromCamera(ndc, S.camera);
+    for (const p of S.pickables) { if (ray.intersectObject(p.obj, true).length) { p.fn(); return; } }
+}
 
-            playMoktakSound();
-            setTimeout(() => playBellChime(), 1200);
-        }
+/* ---------------- 메인 루프 ---------------- */
+function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(S.clock.getDelta(), 0.05), el = S.clock.getElapsedTime();
+    updateMonk(dt); updateCamera(dt, false); stepWeather(dt);
 
-        function updateMonkMovement(delta) {
-            if (state.isBowing) {
-                state.bowTimer += delta * 1.2;
+    S.candleLights.forEach((l, i) => { l.intensity = S.cur.numbers.candle * (0.85 + Math.sin(el * 11 + i * 2) * 0.12 + Math.sin(el * 23 + i) * 0.06); });
+    S.flames.forEach((f, i) => { f.scale.set(0.035 + Math.sin(el * 14 + i) * 0.004, 0.09 + Math.sin(el * 17 + i * 3) * 0.012, 0.035); });
+    if (S.haloDisc) S.haloDisc.rotation.z = el * 0.08;
 
-                // Bowing Prostration Curve (0 ~ Math.PI)
-                const bowProgress = Math.min(state.bowTimer, Math.PI);
-                const bowAngle = Math.sin(bowProgress);
+    S.smoke.forEach(s => {
+        const u = s.userData; u.life += dt * 0.11; if (u.life > 1) u.life -= 1;
+        const t = u.life; s.position.set(S.smokeOrigin.x + Math.sin(t * 6 + u.ox * 3) * 0.12 * t + u.ox * 0.03, S.smokeOrigin.y - 0.7 + t * 2.4, S.smokeOrigin.z + Math.cos(t * 5 + u.ox) * 0.06);
+        s.scale.setScalar(0.12 + t * 0.55); s.material.opacity = Math.sin(t * Math.PI) * 0.3;
+    });
+    const dp = S.dust.geometry.attributes.position.array;
+    for (let i = 0; i < dp.length; i += 3) { dp[i] += Math.sin(el * 0.3 + i) * dt * 0.05; dp[i + 1] += dt * 0.03; if (dp[i + 1] > 6.3) dp[i + 1] = 0.4; }
+    S.dust.geometry.attributes.position.needsUpdate = true;
+    S.rainTex.forEach((t, i) => { t.offset.y += dt * (1.4 + i * 0.2); });
 
-                // Head bows down to mat, Body bends
-                state.monkGroup.position.y = -bowAngle * 0.35;
-                state.monkGroup.rotation.x = bowAngle * 1.35;
+    S.renderer.render(S.scene, S.camera);
+}
 
-                if (state.bowTimer >= Math.PI) {
-                    state.isBowing = false;
-                    state.bowTimer = 0;
-                    state.monkGroup.position.y = 0;
-                    state.monkGroup.rotation.x = 0;
-                    state.bowCount++;
-                    document.getElementById('bowCountText').innerHTML = `올린 절: <strong class="text-amber-300 font-bold text-lg">${state.bowCount}</strong> 배`;
-                    playMoktakSound(0.9);
-                }
-                return;
-            }
-
-            // WASD Walking Logic
-            const speed = 2.8 * delta;
-            let moveX = 0;
-            let moveZ = 0;
-
-            if (state.keys.w) moveZ -= 1;
-            if (state.keys.s) moveZ += 1;
-            if (state.keys.a) moveX -= 1;
-            if (state.keys.d) moveX += 1;
-
-            if (moveX !== 0 || moveZ !== 0) {
-                const angle = Math.atan2(moveX, moveZ);
-                state.monkGroup.rotation.y = angle;
-
-                const nextX = state.monkGroup.position.x + moveX * speed;
-                const nextZ = state.monkGroup.position.z + moveZ * speed;
-
-                // Bounds restriction inside temple
-                state.monkGroup.position.x = Math.max(-5.0, Math.min(5.0, nextX));
-                state.monkGroup.position.z = Math.max(-1.8, Math.min(4.5, nextZ));
-
-                // Subtle walking bounce
-                state.monkGroup.position.y = Math.abs(Math.sin(state.clock.getElapsedTime() * 10)) * 0.08;
-            } else {
-                state.monkGroup.position.y = 0;
-            }
-        }
-
-        // --- WEB AUDIO SYNTHESIZER ---
-        function initAudioContext() {
-            if (!state.audioCtx) {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                state.audioCtx = new AudioCtx();
-            }
-            if (state.audioCtx.state === 'suspended') {
-                state.audioCtx.resume();
-            }
-        }
-
-        function playMoktakSound(pitchMod = 1.0) {
-            initAudioContext();
-            if (!state.audioCtx) return;
-
-            const now = state.audioCtx.currentTime;
-            const osc = state.audioCtx.createOscillator();
-            const gain = state.audioCtx.createGain();
-
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(580 * pitchMod, now);
-            osc.frequency.exponentialRampToValueAtTime(180 * pitchMod, now + 0.09);
-
-            gain.gain.setValueAtTime(0.8 * state.volumes.moktak, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-
-            osc.connect(gain);
-            gain.connect(state.audioCtx.destination);
-
-            osc.start(now);
-            osc.stop(now + 0.11);
-        }
-
-        function playBellChime() {
-            initAudioContext();
-            if (!state.audioCtx) return;
-
-            const now = state.audioCtx.currentTime;
-            [432, 864].forEach((freq, i) => {
-                const osc = state.audioCtx.createOscillator();
-                const gain = state.audioCtx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, now);
-                gain.gain.setValueAtTime(0.25 / (i + 1), now);
-                gain.gain.exponentialRampToValueAtTime(0.0001, now + 3.2);
-
-                osc.connect(gain);
-                gain.connect(state.audioCtx.destination);
-
-                osc.start(now);
-                osc.stop(now + 3.3);
-            });
-        }
-
-        // --- MAIN RENDER & ANIMATION LOOP ---
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const delta = state.clock.getDelta();
-            const elapsed = state.clock.getElapsedTime();
-
-            // Update Monk Controls & Bow Animation
-            updateMonkMovement(delta);
-
-            // Candle Flame Flicker Effects
-            state.candles.forEach((candle, idx) => {
-                candle.intensity = 0.7 + Math.sin(elapsed * 12 + idx) * 0.25;
-            });
-
-            // Buddha Statue Aura Subtle Pulse
-            if (state.statueAura) {
-                state.statueAura.rotation.z = elapsed * 0.15;
-            }
-
-            // Smoke Particles Rise
-            if (state.smokeParticles) {
-                const pos = state.smokeParticles.geometry.attributes.position.array;
-                for (let i = 1; i < pos.length; i += 3) {
-                    pos[i] += delta * 0.3;
-                    if (pos[i] > 2.2) pos[i] = 0.8;
-                }
-                state.smokeParticles.geometry.attributes.position.needsUpdate = true;
-            }
-
-            // Rain Particles Fall
-            if (state.weather === 'rain' && state.rainSystem) {
-                const pos = state.rainSystem.geometry.attributes.position.array;
-                for (let i = 1; i < pos.length; i += 3) {
-                    pos[i] -= delta * 14;
-                    if (pos[i] < 0) pos[i] = 12;
-                }
-                state.rainSystem.geometry.attributes.position.needsUpdate = true;
-            }
-
-            // Camera Subtle Floating Focus
-            state.camera.position.x = Math.sin(elapsed * 0.4) * 0.2;
-
-            state.renderer.render(state.scene, state.camera);
-        }
-
-        // --- UI & EVENT BINDINGS ---
-        function initUIAndEvents() {
-            window.addEventListener('keydown', (e) => {
-                if (e.code === 'Space') {
-                    e.preventDefault();
-                    triggerBow();
-                    return;
-                }
-                const keyMap = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
-                if (keyMap[e.code]) state.keys[keyMap[e.code]] = true;
-            });
-
-            window.addEventListener('keyup', (e) => {
-                const keyMap = { KeyW: 'w', KeyA: 'a', KeyS: 's', KeyD: 'd' };
-                if (keyMap[e.code]) state.keys[keyMap[e.code]] = false;
-            });
-
-            document.getElementById('btnWeather').addEventListener('click', toggleWeather);
-            document.getElementById('btnScripture').addEventListener('click', openScripture);
-            document.getElementById('closeScripture').addEventListener('click', closeScripture);
-            document.getElementById('btnAudio').addEventListener('click', () => {
-                initAudioContext();
-                document.getElementById('audioPanel').classList.toggle('hidden');
-            });
-            document.getElementById('closeAudioPanel').addEventListener('click', () => {
-                document.getElementById('audioPanel').classList.add('hidden');
-            });
-
-            document.getElementById('btnManualMoktak').addEventListener('click', () => playMoktakSound());
-            document.getElementById('btnBellChime').addEventListener('click', () => playBellChime());
-
-            document.getElementById('moktakVol').addEventListener('input', (e) => {
-                state.volumes.moktak = e.target.value / 100;
-                document.getElementById('moktakVolVal').innerText = `${e.target.value}%`;
-            });
-
-            // Scripture Modal Tabs Switch
-            document.querySelectorAll('.scripture-tab').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    document.querySelectorAll('.scripture-tab').forEach(t => {
-                        t.classList.remove('border-amber-900', 'text-amber-950', 'font-bold');
-                        t.classList.add('border-transparent', 'text-stone-600');
-                    });
-                    e.target.classList.add('border-amber-900', 'text-amber-950', 'font-bold');
-                    e.target.classList.remove('border-transparent', 'text-stone-600');
-
-                    const target = e.target.getAttribute('data-tab');
-                    document.querySelectorAll('.scripture-content').forEach(c => c.classList.add('hidden'));
-                    document.getElementById(target).classList.remove('hidden');
-                });
-            });
-        }
-
-        function openScripture() {
-            const modal = document.getElementById('scriptureModal');
-            modal.classList.remove('opacity-0', 'pointer-events-none');
-            modal.children[0].classList.remove('scale-95');
-            modal.children[0].classList.add('scale-100');
-            playBellChime();
-        }
-
-        function closeScripture() {
-            const modal = document.getElementById('scriptureModal');
-            modal.classList.add('opacity-0', 'pointer-events-none');
-            modal.children[0].classList.remove('scale-100');
-            modal.children[0].classList.add('scale-95');
-        }
-    </script>
+window.addEventListener('load', () => {
+    init3D(); buildHall(); buildAltar(); buildBuddha(); buildOfferings(); buildLanterns(); buildProps(); buildMonk();
+    initUI(); poseMonk(); updateCamera(0, true); animate();
+});
+</script>
 </body>
 </html>
